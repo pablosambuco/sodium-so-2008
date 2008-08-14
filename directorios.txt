@@ -1,0 +1,28 @@
+.
+|-- doc ---> http://pablosambuco.no-ip.org/docu
+|-- edit --> la volamos...
+`-- src 
+    |-- docs
+    |-- fs
+    |-- herramientas
+    |-- include
+    |   |-- fs
+    |   |-- kernel
+    |   |   |-- drivers
+    |   |   |-- libk
+    |   |   |-- lotes
+    |   |   `-- mem
+    |   |-- shell
+    |   `-- usr
+    |-- kernel
+    |   |-- drivers
+    |   |-- libk
+    |   |-- log
+    |   |-- lotes
+    |   |-- mem
+    |   |-- planif
+    |   `-- shell
+    |-- mbr
+    |-- solo
+    |-- tests
+    `-- usr

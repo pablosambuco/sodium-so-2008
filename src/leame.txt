@@ -1,0 +1,248 @@
+S.O.D.I.U.M
+
+Sistema Operativo del Departamento de Ingeniería de la Universidad de la Matanza
+--------------------------------------------------------------------------------
+
+Última Revisión: v0.8.2 (21/05/08)
+
+Instalación de los fuentes:
+---------------------------
+Descomprimir el contenido del archivo en un directorio a gusto, preferentemente 
+dentro del home de una cuenta de usuario estándar.
+Acceder al directorio raíz del proyecto y ejecutar el shell script 
+./configurar.sh
+(si no funciona, verificar atributos de ejecución de este script y aquellos 
+que se encuentran dentro del subdirectorio docs y herramientas).
+Se puede hacer esto en un sólo paso, ejecutando desde el directorio raíz:
+
+$ find . -name \*.sh -exec chmod u+x '{}' \;
+
+El objetivo principal del script configurar.sh es el de setear los flags de 
+compilación necesarios, en el archivo Makefile.cfg, de acuerdo a la versión de
+GCC que utilicemos en nuestro sistema. Esta tarea también podrán llevarse a 
+cabo manualmente.
+Una vez ejecutado dicho script no será necesario reincidir salvo que se cambie 
+la versión de gcc.
+
+
+Compilación e Instalación:
+-------------------------
+Preparar un disquete limpio y colocarlo en la disquetera (Verificar que la 
+misma no se encuentre montada antes de comenzar la compilación).
+Acceder a trunk y ejecutar:
+
+Para compilar
+$ make clean all 
+
+Para compilar e instalar
+$ make clean install
+
+En caso de problemas durante la compilación, verificar que todos los shell 
+scripts tengan sus debidos permisos de ejecución, y que todos los binarios se
+encuentran instalados en el sistema. Para ello revisar el archivo 
+check_utils.log
+
+Si los inconvenientes persisten, y los intentos de solucionarlo resultan 
+futiles, dirigirse al Moodle o al grupo Yahoo:
+
+	http://sodium-unlam.no-ip.org/moodle/
+
+	http://ar.groups.yahoo.com/group/sodium_unlam_2008/
+	
+Por favor indicar con el mayor detalle posible (incluir la salida completa 
+del tty) las circunstancias que ocasionan el fallo.
+IMPORTANTE: Siempre es bueno incluir las --version de cada binario 
+involucrado en el proceso de compilación. 
+A saber: bash, gcc, ld, make, nasm, nm, grep, sed, objcopy, etc...
+
+
+Modificación de archivos preexistentes:
+---------------------------------------
+
+En el muy probable caso que necesiten agregar funcionalidad y/o realizar 
+modificaciones en procedimientos de alguna índole a los archivos "estables" 
+(es un decir...), deberán respetar las siguientes pautas:
+
+*Utilizar notación SODIUM para la nomenclatura de nuevas variables y funciones.
+
+*Dejar las funciones originales ENTRE COMENTARIOS EN BLOQUE, e INCLUIR UNA 
+BREVE EXPLICACION de los problemas o necesidades detectadas.
+
+*Realizar modificaciones sobre la copia de la función original e INCLUIR UNA
+BREVE EXPLICACION de las mejoras realizadas en su encabezado.
+
+
+General:
+--------
+Si bien en muchas ocasiones resulta imposible, se valorarán todos los esfuerzos
+por mantener el 100% del código fuente dentro de los 80 caracteres de longitud!!
+Tener en cuenta que el largo recomendado de la tabulacion en estos casos es de 4
+caracteres.
+Tambien pueden utilizar la herramienta indent:
+$ indent -kr -i4
+que suele dejar un código bastante estandarizado.
+
+
+Como Documentar
+---------------
+
+Para la documentacion del Sodium se utilizara el Sistema automatizado provisto por el software Doxygen
+www.doxygen.org
+
+Permite la generacion de HTMLs con referencias cruzadas para la navegacion del codigo
+Permite la generacion de paginas de manual MAN para navegacion del codigo
+Permite la generacion de documentos LaTeX en caso de necesitarlos
+Mediante la herramienta DOT, genera graficos de llamadas a funciones, inclusiones de bibliotecas etc.
+Requiere un formato especial para poder diferenciar lo que es comentario Doxy y lo que no. 
+
+---------------------
+Bloques de comentarios:
+Se ubican en la parte inmediata superior a la funcion/variable/macro/estructura/etc a documentar
+
+Sintaxis:
+(recomendada)
+/**
+ bloque de A
+*/
+A
+
+tiene el mismo efecto que
+
+(opcional)
+/*!
+ bloque de B
+*/
+B
+
+Evitar usar bloques de codigo que comienzan con:
+//////// ; /// ; //!
+Por una cuestion de simplicidad tampoco:
+/********************************************//**
+ *  ... text
+ ***********************************************/
+
+--------------------- 
+COMANDOS
+---------------------
+Doxygen permite el parametrizaje mediante comandos dentro de los bloques de comentarios
+(Ver www.doxygen.org para una lista detallada de esos comandos)
+Los mas utilizados por la catedra son:
+
+\brief [descripcion]
+Descripcion detallada de lo que se documenta
+\param parametro [descripcion]
+Parametro de funciones y macros
+\returns [descripcion]
+Lo que devuelve una funcion o macro
+\note [descripcion]
+Notas aclaratorias
+\todo [descripcion]
+Genera una lista de lo que falta por hacer
+\sa [nombres de variables, funciones, etc]
+"Ver tambien" indica que funciones se relacionan directamente con la actual
+\file [Nombre de archivo]
+Cuando agrgamos una cabecera al archivo, indica explicitamente que esa cabecera pertenece a ese archivo
+\defgroup [identificador interno del grupo] [nombre que se muestra del grupo]
+Crea un grupo, para generar un modulo en la documentacion que englobe funciones similares
+\addgroup [identificador interno del grupo]
+Añade una funcion o lo que se este documentando al grupo indicado
+---------------------
+Sintaxis y ejemplos
+---------------------
+Bloque de comentario ejemplo 
+
+/**
+ \brief Una descripcion BREVE de Cosa.
+
+	descripcion detallada de Cosa.
+
+ \param parametro1 un parametro
+ \param NOMBREPARAMETRO [descripcion]
+ \returns lo que devuelva
+*/
+void cosa(parametro1,NOMBREPARAMETRO){} // funcion documentada (este comentario no lo extrae doxygen)
+
+Para cerrar los parrafos de comentarios utilizar el punto al final de los mismos(.) 
+---------------------
+Cabeceras de archivos
+
+/**
+\file definiciones.h
+\brief contiene las cosas del sodium que todo el mundo pone en otros archivos
+*/
+
+---------------------
+NOTA
+Si los bloques de comentarios NO SE UBICAN sobre el objeto a documentar, se debe indicar a quien pertenece el mismo
+mediante los siguientes comandos
+
+\function
+\var
+\def  -> este es para las macros
+NOTA: EVITAR usar este estilo de documentacion. Genera redundancias
+---------------------
+
+Modulos
+
+Para definir modulos que se documentan aparte (como los numeros de syscall por ejemplo)
+
+\defgroup [groupName] [texto que muestra en la pagina de doc de ese grupo]
+
+ejemplo
+/**
+\defgroup llamadasSyscall Numeros de Syscall
+*/
+/*@{*/
+
+... bloque de las funciones que estan agrupando en la doc ..
+
+/*@}*/
+
+para sumar a un grupo, si una funcion queda fuera del bloque, se indica
+
+\addgroup llamadasSyscall
+
+---------------------
+
+Documentacion de atributos
+
+Si se quiere documentar una variable de una estructura por ejemplo,
+
+struct miEstructura{
+
+int atributo; /*!< una verdadero atributo!! */
+
+}estructuraEjemplo
+
+la sintaxis del comentario es 
+
+/*!< comentario */
+
+Si no entra por una cuestion de estetica se coloca asi:
+
+/*!< una verdadero atributo!! */
+int atributo; 
+
+tambien sirve -->  /**< */
+
+para diferenciar este tipo de comentario del
+/**
+ comentario de bloque
+*/
+
+Se prefiere la forma mencionada -->  /*!< */ 
+pero no hay problema alguno si usan uno u otro
+
+---------------------
+Opcionalidad para indicar el comando
+
+\brief 
+y 
+@brief
+
+Producen el mismo resultado. Es cuestion de cada uno
+
+
+Saludos y Éxitos.
+Cátedra de Sistemas Operativos
+

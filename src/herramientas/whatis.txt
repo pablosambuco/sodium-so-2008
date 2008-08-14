@@ -1,0 +1,31 @@
+awk (1)              - pattern scanning and text processing language
+bochs (1)            - Portable x86 Emulator.
+bximage (1)          - Interactive Disk Image Creator for Bochs
+cat (1)              - concatenate files and print on the standard output
+ctags (1)            - Generate tag files for source code
+dd (1)               - convert and copy a file
+diff (1)             - compare files line by line
+dot (1)              - filter for drawing directed graphs
+doxygen (1)          - documentation system for various programming languages
+gcc (1)              - GNU project C and C++ compiler
+gdb (1)              - The GNU Debugger
+hexdump (1)          - ASCII, decimal, hexadecimal, octal dump
+indent (1)           - changes the appearance of a C program by inserting or deleting whitespace.
+ld (1)               - The GNU linker
+make (1)             - GNU make utility to maintain groups of programs
+mkfs.vfat (8)        - create an MS-DOS file system under Linux
+mkisofs (8)          - create an hybrid ISO9660/JOLIET/HFS filesystem with optional Rock Ridge attributes.
+mount (2)            - mount and unmount filesystems
+mount (8)            - mount a file system
+nasm (1)             - the Netwide Assembler - portable 80x86 assembler
+nm (1)               - list symbols from object files
+objcopy (1)          - copy and translate object files
+objdump (1)          - display information from object files.
+parted (8)           - a partition manipulation program
+qemu (1)             - QEMU Emulator
+sed (1)              - stream editor for filtering and transforming text
+sfdisk (8)           - Partition table manipulator for Linux
+sh (1)               - command interpreter (shell)
+svn (1)              - Subversion command line client tool
+vim (1)              - Vi IMproved, a programmers text editor
+wc (1)               - print the number of newlines, words, and bytes in files

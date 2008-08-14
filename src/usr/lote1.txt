@@ -1,0 +1,39 @@
+# Primero se definen sin orden específico los procesos del lote y un listado 
+# de acciones que realizarán.
+#
+# Así se define el proceso, la imagen que ejecutará, y su prioridad:
+# proceso <NOMBRE_PROCESO> (<NOMBRE_IMAGEN>, <PRIORIDAD>)
+#
+# Así se define cada acción independiente que realizará:
+# "<ACCION> <TAB O ESPACIOS> <REPETICIONES>"
+#
+
+proceso	p1 ("/mnt/usr/p1.bin", 30) 
+sleep	20		 
+fdd	2
+cpu	10
+
+proceso p2 ("/mnt/usr/p1.bin", 20)
+cpu	10
+sleep	50
+cpu	50
+hdd	5
+
+proceso	p3 = p1		# También se pueden definir otros procesos que hagan
+proceso p4 = p2		# lo mismo, para evitar duplicar las acciones de los
+			# anteriores.
+
+#Primer lote de pruebas!
+lote	l1		# La primer línea indica el nombre del lote (l1)
+t> 0	p1		# Acción: "<TIEMPO> <TAB O ESPACIOS> <NOMBRE_PROCESO>"
+t> 10	p2
+t> 40	p3
+t> 40	p4		# <-- acá se muestra que es válido que en el mismo t 
+			# lleguen varios procesos. Esto no significa que 
+			# vayan a haber condiciones de carrera, ya que el 
+			# los cargamos en la cola de listos en el orden dado.
+			# Claro, es factible que uno tenga más prioridad que
+			# que el otro, o sea más corto. De modo que el primero
+			# en agregarse no tiene por qué ser el primero en 
+			# ejecutar. También depende del algoritmo utilizado!
+
