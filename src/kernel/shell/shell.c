@@ -1900,7 +1900,7 @@ Con esta información se podrán recuperar los parámetros pasados desde la
  línea de comandos.
 \date 09/04/2006
 */
-void vFnMenuExecSeg(int iComandoPos)
+/*void vFnMenuExecSeg(int iComandoPos)
 {				//1
 	char stArg1[16];
 	char stArg2[16];
@@ -1976,6 +1976,80 @@ void vFnMenuExecSeg(int iComandoPos)
 		    ("\nError, argumento(s) incorrecto(s).\nForma de uso: Cmd>exec [1 o 2] [tamanio en Kb del proceso]");
 	}			//9
 }				//1
+*/
+void vFnMenuExecSeg(int iComandoPos) {
+    char stArg1[16];
+    char stArg2[16];
+    int iArg1;
+    int iArg2;
+    int indiceEnPcbs;
+    int iValorRetorno;
+
+    if ((iFnGetArg(iComandoPos, 1, stArg1, 16) == 1) && 
+        (iFnGetArg(iComandoPos, 2, stArg2, 16) == 1)) {
+
+		iArg1 = iFnCtoi(stArg1);    //Tipo de proceso (SISTEMA/USUARIO)
+		iArg2 = iFnCtoi(stArg2);	//Tamanio en bytes del proceso
+
+        if ( (iArg1 < 1) || (iArg1 > 2) ) {
+            vFnImprimir("\n Parametro invalido: Por favor ingrese: "
+                        "1 para lanzar un proceso de sistema o "
+                        "2 para un proceso usuario");
+        } else if ((iArg2 <= 0) || (iArg2 > iFnSegmentoMaximo())) {
+            //TODO Cambiar limites ( Desde 1byte, Hasta MemDisponible )
+            //No hay memoria suficiente
+            vFnImprimir("\n Tamanio de proceso invalido. "
+                        "Ingrese un valor entre [1 y %d]", iFnSegmentoMaximo());
+        } else {
+            //Hay memoria, se intenta crear el segmento
+            vFnImprimir("\n Creando un segmento de memoria para un proceso de "
+                        "%d bytes.", iArg2);
+            iValorRetorno = iFnMalloc(iArg2);
+
+            if (iValorRetorno == -1) {
+                //No hay memoria para el segmento (el sistema es multiprocesado,
+                //puede que antes la memoria alcanzase y ahora no)
+                vFnImprimir("\n No se pudo alojar el proceso. "
+                            "Tamanio solicitado: %d", iArg2);
+            } else {
+                //Se creo el segmento, ahora solo falta crear el proceso
+                vFnImprimir("\n Intentando iniciar Proceso...");
+                switch (iArg1) {
+                    case 1:     //Proceso de sistema
+                        indiceEnPcbs=iFnNuevaTarea(iFnSistema,"PR_SISTEMA...");
+                        break;
+                    case 2:     //Proceso de usuario
+                        indiceEnPcbs=iFnNuevaTarea(iFnProceso1,"PR_USUARIO...");
+                        break;
+                }
+
+                if (indiceEnPcbs >= 0) {
+                    //Se pudo crear el proceso
+                    pstuPCB[indiceEnPcbs].uiTamProc = iArg2;
+                    pstuPCB[indiceEnPcbs].iPrioridad = iArg1;
+                    pstuPCB[indiceEnPcbs].uiDirBase = iValorRetorno;
+                    vFnImprimir("[OK]");
+                } else if (indiceEnPcbs ==-1) {
+                    //No se pudo crear el proceso, limite de tareas alcanzado
+                    vFnImprimir("\n El sistema no acepta mas tareas, "
+                                "Limite = %d", CANTMAXPROCS);
+
+                    //Se borra el segmento recien creado
+                    if (iFnFree(iValorRetorno) != -1) {
+                        vFnImprimir("\n Se ha liberado el segmento reservado");
+                    } else {
+                        vFnImprimir("\n No se ha podido liberar el segmento");
+                    }
+                }
+            }
+        }	
+    } else {
+        vFnImprimir("\nError, argumento(s) incorrecto(s)."
+                    "\nForma de uso: "
+                    //TODO - Tamanio en bytes o Kbytes ???
+                    "Cmd>exec [1 o 2] [tamanio en bytes del proceso]");
+    }
+}
 
 
 /**

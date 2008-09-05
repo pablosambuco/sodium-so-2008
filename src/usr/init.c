@@ -5,7 +5,16 @@ int iFnImprimirNumero( const char *, int  );
 int main(){
 	int iPid,iStatus,iOpcion;
 	iFnImprimirNumero( "\nSoy el padre, mi pid es ", getpid() );
-	
+
+
+    /*   
+        int * tnt;
+        tnt = (int *)0xFFFFFFFF;
+        write(0, "\n\nBANG!!!\n\n", 0);
+        *tnt = 1000;
+    /**/
+
+
 	iPid = fork();
 	if( !iPid ){
     	iFnImprimirNumero( "\nSoy el hijo, mi pid es ", getpid() );
@@ -34,6 +43,8 @@ int main(){
 	iFnImprimirNumero( "\nMi hijo salio con el estado ", iStatus );
 	exit(0);
 }
+
+
 int iFnImprimirNumero( const char *cncpBuffer, int iNumero ){
 //	write( 0, "\n ", 0 );
 	write( 0, cncpBuffer, 0 );

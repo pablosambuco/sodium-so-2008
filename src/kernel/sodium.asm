@@ -121,6 +121,18 @@ jSwitch3:
 	call 	cImprimirRecuadro
 	mov   si, strMemTitulo
 	call 	cImprimirTitulo
+	mov 	si, strMPagiNoSelecc
+	call 	cImprimirOpcion1
+	mov 	si, strMSegmSelecc
+	call 	cImprimirOpcion2
+	mov 	ah,0
+	int 	16h
+	cmp 	al,0dh
+	je 	jOpcModoSegmentado
+Switch4:
+	call 	cImprimirRecuadro
+	mov   si, strMemTitulo
+	call 	cImprimirTitulo
 	mov 	si, strMPagiSelecc
 	call 	cImprimirOpcion1
 	mov 	si, strMSegmNoSelecc
@@ -130,18 +142,6 @@ jSwitch3:
 	int 	16h
 	cmp 	al,0dh
 	je 	jOpcModoPaginado
-Switch4:
-	call 	cImprimirRecuadro
-	mov   si, strMemTitulo
-	call 	cImprimirTitulo
-	mov 	si, strMPagiNoSelecc
-	call 	cImprimirOpcion1
-	mov 	si, strMSegmSelecc
-	call 	cImprimirOpcion2
-	mov 	ah,0
-	int 	16h
-	cmp 	al,0dh
-	je 	jOpcModoSegmentado
 	jmp 	jSwitch3
 
 ;Menu Instalar/Desinstalar

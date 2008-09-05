@@ -51,7 +51,7 @@ iFnSegmentoMaximo ()
   for (iN = 29; iN >= 0; iN--)
     {
       if (iMatrizMf[iN][0] == -1)
-	return (iMatrizMf[iN][1] - (iMatrizMf[iN - 1][1] + 1));
+    	return (iMatrizMf[iN][1] - (iMatrizMf[iN - 1][1] + 1));
     }
 
   //no hay segmentos libres
@@ -103,6 +103,9 @@ int
 iFnMalloc (int iCantidadMemoria)
 {				//1
   int iCantMemSegm = 0;		// Variable para calculos internos.
+
+//TODO - lala
+vFnImprimir("\n\nME QUIERO MORIRRRR!!!\n\n");
 
 // Valida que no quiera reservar mas memoria de la total disponible.
   if ((ulMemoriaBase + iCantidadMemoria) < ulMemoriaTope)
