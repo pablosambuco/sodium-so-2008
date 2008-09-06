@@ -1295,7 +1295,7 @@ void vFnMenuStack(iComandoPos)
 						break;
 					default:
 						vFnImprimir("\nSeleccion no valida: RING=%d",iRing);
-						return(1);
+						return;
 					}
 
 				} else {

@@ -69,4 +69,12 @@ typedef struct _u80 { unsigned int word[20]; }	u80;
 #define TByte(Direccion)	((u8)(Direccion >> 16))
 #define CByte(Direccion)	((u8)(Direccion >> 24))
 
+// La memoria ALTA comienza en 2MB, la BAJA comienza donde terminan las estructuras del kernel
+#define INICIO_MEMORIA_ALTA 0x200000
+
+// El heap del kernel incluye los discos RAM
+#define TAMANIO_HEAP_KERNEL 0x400000
+
+
+
 #endif //_DEFINICIONES_H_

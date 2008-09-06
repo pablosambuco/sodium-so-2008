@@ -12,7 +12,7 @@ int main(){
         tnt = (int *)0xFFFFFFFF;
         write(0, "\n\nBANG!!!\n\n", 0);
         *tnt = 1000;
-    /**/
+    */
 
 
 	iPid = fork();
