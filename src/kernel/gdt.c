@@ -72,9 +72,8 @@ void vFnGdtInicializar (dword pdwGDT) {
       iMapaSegmentos[iN] = 0; // bloque de segmentos no utilizados
     }
 
-    //Los primeros 4Mb los dejamos para el kernel
-    //TODO - Definir por que 4Mb, y reemplazar por un define
-    for( iN = 0; iN < (4 * 1024 * 1024 / SEGMENT_SIZE); iN++) { 
+    //Se marcan como usados los "segmentos" que utiliza el kernel
+    for( iN = 0; iN < ((INICIO_MEMORIA_ALTA + TAMANIO_HEAP_KERNEL) / SEGMENT_SIZE); iN++) { 
         mapa_segmentos_set( iN, 1 );
     }
 }

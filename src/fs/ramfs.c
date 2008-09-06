@@ -84,7 +84,7 @@ int iFnRamFsInit(void)
 	     (dword) pvFnKMalloc(disco_log->dwTamanio, MEM_ALTA)) == 0) {
 		vFnImprimir
 		    ("\nNo se pudo reservar suficiente memoria para el disco %s",
-		     disco_log->strEtiqueta);
+		     disco_log->strEtiqueta);		     
 		return -ENOMEM;
 	}
 	disco_log->pstDirRaiz = (void *) disco_log->dwDireccionInicial;
@@ -103,7 +103,6 @@ int iFnRamFsInit(void)
 	disco_lotes->pstDirRaiz = (void *) disco_lotes->dwDireccionInicial;
 	disco_lotes->dwEntradasRaiz = 20;
 	disco_lotes->bActivo = 1;
-
 	return EXITO;
 
 }

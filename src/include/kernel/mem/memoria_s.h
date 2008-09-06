@@ -6,6 +6,42 @@
 #define _MEMORIA_S_H
 
 #include <video.h>
+
+//t_nodo InicioSegmentosLibres;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*!
  * \brief Prototipo de la Funcion "malloc".
  */

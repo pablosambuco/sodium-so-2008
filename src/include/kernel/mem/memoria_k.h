@@ -9,6 +9,13 @@
 
 #define MEM_BAJA 1
 #define MEM_ALTA 2
+
+// La memoria ALTA comienza en 2MB, la BAJA comienza donde terminan las estructuras del kernel
+#define INICIO_MEMORIA_ALTA 0x200000
+
+// El heap del kernel incluye los discos RAM
+#define TAMANIO_HEAP_KERNEL 0x400000
+
 /*!
  * \brief Tipo de datos para apuntar a un nodo libre
  */

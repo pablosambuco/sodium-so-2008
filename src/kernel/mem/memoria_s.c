@@ -3,10 +3,46 @@
 #include <shell/teclado.h>
 
 extern int ulMemoriaBase;
-
 extern int ulMemoriaTope;
-
 extern int iFmf, iCcmf, iMatrizMf[30][2];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Matriz de 30 filas por 2 columnas donde se almacenaran las reservas y liberaciones de memoria.
 // Se guarda [-1, posfinal] para especificar un segm. de memoria libre.

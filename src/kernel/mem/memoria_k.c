@@ -46,10 +46,12 @@ void vFnIniciarKMem()
 	((t_nodo *) InicioMemoriaKernel.pNodoSig)->pNodoSig = NULL;
 
 	InicioMemoriaAlta.nTamanio = 0;
-	InicioMemoriaAlta.pNodoSig = (void *) 0x200000;
-	((t_nodo *) InicioMemoriaAlta.pNodoSig)->nTamanio =
-	    uiTamanioMemoriaBios -
-	    (unsigned int) InicioMemoriaAlta.pNodoSig;
+	InicioMemoriaAlta.pNodoSig = (void *) INICIO_MEMORIA_ALTA;
+	((t_nodo *) InicioMemoriaAlta.pNodoSig)->nTamanio = TAMANIO_HEAP_KERNEL; 
+// Antes se tomaba la memoria total:
+//  ((t_nodo *) InicioMemoriaAlta.pNodoSig)->nTamanio = 
+//	    uiTamanioMemoriaBios -
+//	    (unsigned int) InicioMemoriaAlta.pNodoSig;
 	((t_nodo *) InicioMemoriaAlta.pNodoSig)->pNodoSig = NULL;
 
 }
@@ -108,12 +110,15 @@ void *pvFnKMalloc(dword nTamanio, int iOpcion)
 			//Indico el tamanio del bloque asignado
 			pNodoOcupado->nTamanio =
 			    nTamanio + sizeof(t_nodoOcupado);
+			
+			vFnImprimir("\nPedido: %.2dkb", pNodoOcupado->nTamanio/1024);
 			return ((void *) ((void *) pNodoOcupado +
 					  sizeof(t_nodoOcupado)));
 		}
 		//Si no hay espacio en el bloque actual avanzo al siguiente
 		pUltimoNodo = pNodoActual;
-	}
+	}	
+	vFnImprimir("\nSin memoria!");
 	return (NULL);
 }
 
