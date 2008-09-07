@@ -55,7 +55,7 @@ void vFnSumaFpu (int);
 void vFnMenuVerSemaforos();
 void vFnMenuVerShm();
 void vFnMenuTestptrace(int);
-
+void vFnMenuSumaFpu(int);
 
 void vFnTermLog (unsigned char ucCaracter);
 

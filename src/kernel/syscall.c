@@ -864,7 +864,7 @@ long lFnSysNanosleep(timespec const *timespecRequested_time, timespec *timespecR
 	pstuPCB[ ulProcActual ].iEstado = PROC_DETENIDO;
 	timespecTiempoRequerido.tv_nsec/= 1000000;
 	pstuPCB[ ulProcActual ].lNanosleep = (timespecTiempoRequerido.tv_sec * 1000) + timespecTiempoRequerido.tv_nsec;
-	pstuPCB[ ulProcActual ].puRestoDelNanosleep = timespecRemaining;
+	pstuPCB[ ulProcActual ].puRestoDelNanosleep = (unsigned int *)timespecRemaining;
 	vFnPlanificador();
 	return 0;
 }

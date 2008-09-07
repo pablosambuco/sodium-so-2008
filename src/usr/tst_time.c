@@ -99,8 +99,8 @@ int main(){
 	}
 	// Probamos el funcionamiento de settimeofDay
 	// pondremos el mayor valor que puede recuperar el gettimeofday
-	//unsigned long prueba = 2147483648 - 1;
-	liValor = 2147483648 - 1;
+	// 2^32 - 1
+	liValor = 2147483647;
 	time.tv_sec = liValor/1000;
 	time.tv_usec = liValor - time.tv_sec*1000;
 	hh.tz_minuteswest = 0;
@@ -174,7 +174,7 @@ int main(){
 	iFnImprimirNumero("rem.tv_sec = ", rem.tv_sec);
 	iFnImprimirNumero("rem.tv_nsec = ", rem.tv_nsec);
 	
-exit(0);
+	return 0;
 }
 
 // Funcion que recibe una fecha en formato de vector (año-mes-dia-hora-minuto-segundo)

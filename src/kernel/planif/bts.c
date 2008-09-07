@@ -15,7 +15,7 @@ Devuelve:
 void vFnPlanificadorBTS()//balance tiempo de espera y servicio
 {
     static int stabIniciar=0;
-    static int staiServicio=1;
+//    static int staiServicio=1; //No se esta usando 
     static int staiEspera=2;
     unsigned int uiVectorDescriptorAuxiliarTarea[2];
       //int iNUltimaTarea = -1;   
@@ -55,7 +55,7 @@ void vFnPlanificadorBTS()//balance tiempo de espera y servicio
     pstuPCB[staiProcesoAnterior].ulTiempoServicio+=uliQuantum;// /staiServicio;
     //Para evitar el overhead se puede crear un vector con los sub indices de los
     //procesos listos     
-    for(ulC;ulC<CANTMAXPROCS;ulC++)//busca de todos los procesos listos kual tiene mas prioridad
+    while(ulC<CANTMAXPROCS)//busca de todos los procesos listos kual tiene mas prioridad
     {
         if(pstuPCB[ulC].iEstado == PROC_LISTO)//solo aumentara la prioridad progresivamente
                                           //para los listos (que esperen mucho)
@@ -71,7 +71,8 @@ void vFnPlanificadorBTS()//balance tiempo de espera y servicio
                 ulMaxP=ulPrioridad;
                 ulProcesoSeleccionado=ulC;               
             }           
-        }    
+        }
+        ulC++;
     }   
     if(ulProcesoSeleccionado==0 || ulProcesoSeleccionado==1 || ulProcesoSeleccionado==2)
     {

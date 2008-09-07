@@ -368,29 +368,27 @@ pstFnConcatenarCadena (char * stCadena1, char * stCadena2)
 int
 iFnBuscarEnCadena (char * stCadena, char * stCadenaABuscar,int iPosInicial)
 {
-	int iCantidadCadena,iCantidadCadenaABuscar,iN,iJ,iX;
+	int iCantidadCadena,iCantidadCadenaABuscar,iN,iX;
 
 	iCantidadCadena=iFnLongitudCadena(stCadena);
 	iCantidadCadenaABuscar=iFnLongitudCadena(stCadenaABuscar);
 	iN=iPosInicial;
 	if(iN<0) return (-1);
-	iJ=0;
 	while (stCadena[iN] != '\0')
 	{
-		//if(iN-iCantidadCadena<=iCantidadCadenaABuscar) return (-1);
-		if (stCadena[iN]==stCadenaABuscar[iJ])
+		if (stCadena[iN]==stCadenaABuscar[0])
 		{
 			iX=0;
-			while (stCadena[iN+iX]==stCadenaABuscar[iJ+iX] && iX<iCantidadCadenaABuscar-1)
+			while (stCadena[iN+iX]==stCadenaABuscar[iX] && iX<iCantidadCadenaABuscar-1)
 			{
 				iX++;
 			}
 		 if (iX==iCantidadCadenaABuscar-1)
-			return (iN+1);
+			return (iN + 1);
 		}
 		iN++;
 	}
-	if(stCadena[iN] == '\0') return (-2);
+	return -2;
 }
 
 
@@ -467,16 +465,13 @@ pstFnCadenaDerecha (char * stCadena, int iCantidad)
 int
 iFnEsNumero (char * stCadena)
 {
-        static char stacValores[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 	int iCantidadCadena,iN;
 
 	iCantidadCadena=iFnLongitudCadena(stCadena);
 	iN=0;
 	while (iN<iCantidadCadena && stCadena[iN]!= '\0')
 	{
-	 if(stCadena[iN]=='1' || stCadena[iN]=='2' || stCadena[iN]=='3' || stCadena[iN]=='4'
-		|| stCadena[iN]=='5' || stCadena[iN]=='6' || stCadena[iN]=='7' || stCadena[iN]=='8'
-		|| stCadena[iN]=='9' || stCadena[iN]=='0')
+	 if(stCadena[iN] >= '0' && stCadena[iN] <= '9')
 		iN++;
 	 else return (-1);
 	}

@@ -4,6 +4,7 @@
 #include <kernel/pcb.h>
 #include <kernel/gdt.h>
 #include <kernel/libk/string.h>
+#include <kernel/libk/libk.h>
 
 #include <shell/shell.h>
 #include <shell/teclado.h>
@@ -31,10 +32,13 @@ Fecha última modificación: 11/11/2007
 *******************************************************************************/
 void vFnMenuPCB(iComandoPos)
 {
-	int iPid, iTSS, iPCB;
-	int iN, iEstadoAnterior;
+	int iPid;
+//	int iTSS; //No se esta usando
+	int iPCB;
+//	int iN; //No se esta usando
+	int iEstadoAnterior;
 	char stArg1[6];
-	dword *pdwVolcado;
+//	dword *pdwVolcado; //No se esta usando
 
 	if (iFnGetArg(iComandoPos, 1, stArg1, 4) == 1) {
 		iPid = iFnXtoi(stArg1);

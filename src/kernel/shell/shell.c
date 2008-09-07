@@ -1098,7 +1098,7 @@ void vFnMenuDesc(int iComandoPos)
 {
 	char stArg1[16],* stPos;
 	int iArg1 = 0,iPosProc,iValor,iPos1,iPos2,iN;
-	dword *pdwVolcado;
+//	dword *pdwVolcado; //No se esta utilizando
 	if (iFnGetArg(iComandoPos, 1, stArg1, 15) == 1) {
 		iArg1 = iFnCtoi(stArg1);
 		if (iFnEsNumero(stArg1)==0)
@@ -1288,7 +1288,7 @@ void vFnMenuStack(iComandoPos)
 					switch (iRing) {
 					case 3:
 						pdwVolcado = (unsigned int *) pstuPCB[iPCB].uiDirBase + stuTSSTablaTareas[iTSS].esp;
-						iCantidadDWordsStack = (unsigned int *) pstuPCB[iPCB].uiLimite - stuTSSTablaTareas[iTSS].esp;
+						iCantidadDWordsStack = pstuPCB[iPCB].uiLimite - stuTSSTablaTareas[iTSS].esp;
 						vFnImprimir
 				    		("\nValores calculados: Dir. inicial volcado=0x%x, Cant.Words=%d",
 							pdwVolcado, iCantidadDWordsStack); 

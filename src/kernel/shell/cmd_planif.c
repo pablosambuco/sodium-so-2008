@@ -101,7 +101,8 @@ void vFnSubCmdPlanifSet(int iComandoPos){
 	int i=0;
 	if(iFnGetArg (iComandoPos, 2, strPar, sizeof(strPar)) == 1){
 		while(strPar[i]!='='){
-			strVariable[i]=strPar[i++];
+			strVariable[i]=strPar[i];
+			i++;
 			if(strPar[i]=='\0')
 				break;
 		}
@@ -113,7 +114,8 @@ void vFnSubCmdPlanifSet(int iComandoPos){
 		else{
 			int j=i;
 			while(strPar[i]!='\0'){
-				strValor[i-j]=strPar[i++];
+				strValor[i-j]=strPar[i];
+				i++;
 			}			
 			strValor[i-j]='\0';
 			

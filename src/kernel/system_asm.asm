@@ -44,7 +44,7 @@ CTRL_WORD	equ	00110100b	;Counter=0, Write LSB and then MSB, Mode=2,
 
 
 ;*******************************************************************************
-;* MACRO: ENTRADA_STACK_KERNEL                                               
+;* MACRO: ENTRADA_STACK_KRNL                                               
 ;* Descripcion: Esta macro se encarga de manejar el cambio de stack desde 
 ;		cualquier proceso que ejecute una syscall o rutina de atención
 ;		que esté definida dentro del código del kernel.
@@ -56,7 +56,7 @@ CTRL_WORD	equ	00110100b	;Counter=0, Write LSB and then MSB, Mode=2,
 ;* Parametros: Ninguno
 ;******************************************************************************
 
-%macro	ENTRADA_STACK_KERNEL 0
+%macro	ENTRADA_STACK_KRNL 0
  	push	ds 		;todo esto se guarda en el stack original
  	push	es
  	push	fs
@@ -123,10 +123,10 @@ CTRL_WORD	equ	00110100b	;Counter=0, Write LSB and then MSB, Mode=2,
 	mov	ebx, [0x200000-8] ;(antes de calcular el definitivo)
 				
 ;-------------------------------(a partir de ahora pusheamos en el stack del kernel)
-%endmacro ;FIN ENTRADA_STACK_KERNEL
+%endmacro ;FIN ENTRADA_STACK_KRNL
 
 
-%macro SALIDA_STACK_KERNEL 0
+%macro SALIDA_STACK_KRNL 0
 ;-------------------------------(Aquí restauramos el stack del proceso)
 	pop	ebp
  	pop	edi    		;aquí restauramos el stack pointer original
@@ -144,7 +144,7 @@ CTRL_WORD	equ	00110100b	;Counter=0, Write LSB and then MSB, Mode=2,
  	pop	fs
  	pop	es
  	pop	ds
-%endmacro ;FIN SALIDA_STACK_KERNEL
+%endmacro ;FIN SALIDA_STACK_KRNL
 
 
 
@@ -283,7 +283,7 @@ vFnHandlerGenerico_Asm:
 
 	pushad
 	
-	ENTRADA_STACK_KERNEL
+	ENTRADA_STACK_KRNL
 
 	;Llamada al Handler generico en C
 	call	vFnHandlerGenerico
@@ -292,7 +292,7 @@ vFnHandlerGenerico_Asm:
 	mov	eax, 0x20
 	out	PIC1 - 1, al
 
-	SALIDA_STACK_KERNEL
+	SALIDA_STACK_KRNL
 
 	popad
 
@@ -313,7 +313,7 @@ vFnHandlerTimer_Asm:
 
 	pushad
 
-	ENTRADA_STACK_KERNEL	
+	ENTRADA_STACK_KRNL	
 
 	;Limpio el PIC para que se pueda volver a disparar. En este caso 
 	;PRIMERO limpio el PIC, porque si no lo hago antes de hacer el context
@@ -339,8 +339,8 @@ vFnHandlerTimer_Asm:
 	;HAYA UN PROCESO ACTIVO Y NO SE HAGA UN CONTEXT SWITCH, EN ESE CASO
 	;SEGUIMOS NOSOTROS... POR ESO ES IMPORTANTE QUE NADIE NOS DESTRUYA
 	;EL STACK HASTA QUE LO DESCARTEMOS NOSOTROS... (VER COMENTARIOS EN
-	;LA MACRO ENTRADA_STACK_KERNEL)
-	SALIDA_STACK_KERNEL
+	;LA MACRO ENTRADA_STACK_KRNL)
+	SALIDA_STACK_KRNL
 	
 	popad
 	
@@ -362,7 +362,7 @@ vFnHandlerTeclado_Asm:
 
 	pushad
 	
-	ENTRADA_STACK_KERNEL
+	ENTRADA_STACK_KRNL
 
 	call vFnHandlerTeclado
 	
@@ -370,7 +370,7 @@ vFnHandlerTeclado_Asm:
 	mov	eax, 0x20
 	out	PIC1 - 1, al
 	
-	SALIDA_STACK_KERNEL
+	SALIDA_STACK_KRNL
 
 	popad
 	
@@ -390,12 +390,12 @@ vFnExcepcionCPU7_Asm:
 
 	pushad
 	
-	ENTRADA_STACK_KERNEL
+	ENTRADA_STACK_KRNL
 
 	call vFnExcepcionCPU7
 	;clts
 
-	SALIDA_STACK_KERNEL
+	SALIDA_STACK_KRNL
 
 	popad
 	
@@ -415,11 +415,11 @@ vFnExcepcionCPU16_Asm:
 
 	pushad
 	
-	ENTRADA_STACK_KERNEL
+	ENTRADA_STACK_KRNL
 
     call vFnExcepcionCPU16
 
-	SALIDA_STACK_KERNEL
+	SALIDA_STACK_KRNL
 
 	popad
 	
@@ -441,7 +441,7 @@ vFnExcepcionCPU16_Asm:
 ;****************************************************************************
 vFnHandlerSyscall_Asm:
 
-	ENTRADA_STACK_KERNEL
+	ENTRADA_STACK_KRNL
 
 	push	edx	;estos vienen a ser los parámetros de la syscall,
 	push	ecx	;al menos de prueba, realmente van más

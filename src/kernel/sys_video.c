@@ -48,12 +48,12 @@ iFnSysImprimirCaracter (int iHwnd, char cCaracter)
       break;
     default:
       vFnPonerCaracter (iHwnd, cCaracter);
-      stavFnIncrementarCoordenadas (iHwnd);
+      vFnIncrementarCoordenadas (iHwnd);
       break;
     }
 
   if (iHwnd == 0)
-    stavFnActualizarCursor (0);
+    vFnActualizarCursor (0);
 
   return 1;
 }
@@ -76,7 +76,7 @@ vFnTabulador (int iHwnd)
   for (staiIndice = 0; staiIndice < staiCantidadEspacios; staiIndice++)
     {
       vFnPonerCaracter (iHwnd, ' ');
-      stavFnIncrementarCoordenadas (iHwnd);
+      vFnIncrementarCoordenadas (iHwnd);
     }
 }
 
@@ -101,21 +101,20 @@ vFnNuevaLinea (int iHwnd)
 void
 vFnBorrarCaracter (int iHwnd)
 {
-  if (--pstuVentana[iHwnd].iCursorX == -1)
-    {
+   if (--pstuVentana[iHwnd].iCursorX == -1)
+   {
       if (pstuVentana[iHwnd].iCursorY == 0)
-	pstuVentana[iHwnd].iCursorX = 0;
+         pstuVentana[iHwnd].iCursorX = 0;
       else
-	{
-	  pstuVentana[iHwnd].iCursorX = pstuVentana[iHwnd].iAncho - 1;
-	  pstuVentana[iHwnd].iCursorY--;
-	}
-    }
-
-  vFnPonerCaracter (iHwnd, ' ');
-
-  if (iHwnd == HWND_COMANDO)
-    stavFnActualizarCursor (0);
+      {
+         pstuVentana[iHwnd].iCursorX = pstuVentana[iHwnd].iAncho - 1;
+         pstuVentana[iHwnd].iCursorY--;
+      }
+   }
+   vFnPonerCaracter (iHwnd, ' ');
+   
+   if (iHwnd == HWND_COMANDO)
+      vFnActualizarCursor (0);
 }
 
 /**
@@ -180,8 +179,8 @@ vFnScroll (int iHwnd)
  * el port 0x3D4 con 0xE), en este caso con 0x02.
  * </pre>
  */
-static void
-stavFnActualizarCursor (int iHwnd)
+void 
+vFnActualizarCursor (int iHwnd)
 {
   int iCursorX;
   int iCursorY;
@@ -197,11 +196,11 @@ stavFnActualizarCursor (int iHwnd)
 }
 
 /**
- * stavFnIncrementarCoordenadas: Funcion privada al modulo que incrementa las
+ * vFnIncrementarCoordenadas: Funcion privada al modulo que incrementa las
  *                          coordenadas por cada caracter que imprime.
  */
-static inline void
-stavFnIncrementarCoordenadas (int iHwnd)
+inline void
+vFnIncrementarCoordenadas (int iHwnd)
 {
   int iCursorX = pstuVentana[iHwnd].iCursorX;
   int iCursorY = pstuVentana[iHwnd].iCursorY;

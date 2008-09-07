@@ -179,9 +179,7 @@ Recibe:
 Devuelve: 
 *******************************************************************************/
 void prenderMotor()
-{
-	u32 i;
-	
+{	
 	vFnImprimir("Se va a Prender el Motor\n");
 	//for(i = 0; i < 10000; i++);
 

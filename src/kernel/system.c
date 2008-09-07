@@ -402,8 +402,7 @@ vFnExcepcionCPU16 ()
   //Esta funcion es llamada desde vFnExcepcionCPU16_Asm
   u16 usiEstadoFPU;
   u16 usiControlFPU;
-  u32 aux;
-  
+   
   //guardamos las palabras de estado y control del FPU
   asm volatile( "fnstsw %0\n"
 		  		"fnstcw %1\n"
@@ -444,13 +443,7 @@ vFnExcepcionCPU16 ()
   } 		  
 		  	
   //Se envia la senial
-  lFnSysKill(pstuPCB[ulProcActual].ulId,SIGFPE);
-
-  /*  ASM_CLI;
-  PASAR_A_SELECTOR_DATOS_KERNEL;
-  vFnImprimir ("\nError de Coprocesador...");
-  ASM_HLT;*/
-  
+  lFnSysKill(pstuPCB[ulProcActual].ulId,SIGFPE);  
 }
 
 
@@ -671,7 +664,7 @@ lFnHandlerSyscall ( long eax, long ebx, long ecx, long edx )
 		case( __NR_setpriority ):  return lFnSysSetpriority( (int) ebx,(int) ecx,(int ) edx  );
 		case( __NR_getpriority ):  return lFnSysGetpriority( (int) ebx,(int) ecx);
 		case( __NR_nice ):  return lFnSysNice( (int) ebx );
-		case( __NR_clone ): return lFnSysClone((struct pt_regs *) ebx, (int) edx);
+		case( __NR_clone ): return lFnSysClone((stuRegs *) ebx, (int) edx);
 			
 		case( __NR_stime ):  return lFnSysStime( (time_t *) ebx );
 		case( __NR_times ):  return lFnSysTimes( (tms *) ebx );

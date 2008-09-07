@@ -27,5 +27,6 @@ int main(){
     					fVar3, fVar4, fVar3/fVar4);
 
 	iFnImprimir_usr("\nSoy el hijo, y ya termine (SALGO CON 42)\n");
-	exit( 42 );
+	
+	return 42;
 }

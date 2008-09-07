@@ -15,4 +15,9 @@ void vFnSubCmdPlanifDefecto();
 void vFnSubCmdPlanifMostrar();
 void vFnSubCmdPlanifSet(int);
 /*@}*/
+
+long lFnSysSchedSetParam(int);
+long lFnSysSchedSetScheduler(int);
+long lFnSysSchedGetScheduler();
+
 #endif

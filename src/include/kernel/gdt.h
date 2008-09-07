@@ -134,6 +134,7 @@ typedef struct {
 void vFnGdtInicializar(dword);
 int iFnBuscaPosicionProc (unsigned long ulPid);
 int iFnNuevaTarea(void *, char*);
+int iFnInstanciarIdle();
 int iFnInstanciarInit();
 int iFnDuplicarProceso(unsigned int uiProcPadre); /*!< devuelve el indice de PCB/TSS del proceso nuevo */
 int iFnEliminarProceso(unsigned int uiProcesp); /*!< elimina todos los recursos usados por el proceso */

@@ -69,62 +69,9 @@
 #define ASCII_TABULADOR '\t'
 #define ASCII_BACKSPACE '\b'
 #define ASCII_FIN_LINEA '\0'
-/*@}*/
 
 #define TAMANIO_BUFFER_SHELL 256
 #define TAMANIO_BUFFER_TECLADO 10
-
-char stBufferShell[TAMANIO_BUFFER_SHELL];
-
-char stBufferTeclado[TAMANIO_BUFFER_TECLADO];
-
-#define LARGO_MAPA_TECLADO 128
-
-//La constante TAMANIO_ARCHKM se genera cuando se hace 'make'
-#define CANTIDAD_KEYMAPS (TAMANIO_ARCHKM / sizeof(stuDefinicionTeclado))
-
-struct _stuKeyCode {
-    unsigned char tipo;
-    unsigned char ascii;
-};
-
-typedef struct _stuKeyCode stuKeyCode;
-
-/**
- * Encapsula toda la informacion relativa a una distribucion de teclado
- */
-struct _stuDefinicionTeclado {
-    char sCodigo [5];
-    char sNombre [25];
-    stuKeyCode stashMatrizNormal  [LARGO_MAPA_TECLADO];
-    stuKeyCode stashMatrizShifted [LARGO_MAPA_TECLADO];
-    stuKeyCode stashMatrizAltGred [LARGO_MAPA_TECLADO];
-} NOALIGN;
-
-typedef struct _stuDefinicionTeclado stuDefinicionTeclado;
-
-
-void vFnManejadorTecladoShell (unsigned char ucScanCode);
-void vFnScanCodeExtAKeyCode( stuKeyCode*, unsigned char );
-void vFnKeyCodeNumPad( stuKeyCode* );
-int  iFnTeclaEspecial ( stuKeyCode, unsigned char );
-void * pvFnAbrirArchivoKeymap (void);
-int iFnCambiaTecladoI(unsigned int);
-int iFnCambiaTecladoS(char *);
-void vFnListarKeymaps();
-char cFnGetChar();
-char cFnPausa();
-
-
-/**
-	Permite realizar una pausa o cortar la ejecucion de una lista muy larga
-	de informacion, como por ejemplo la ayuda.
-	\date 13/04/2008
-*/
-#define SHELL_INTERACTIVO  vFnImprimir ("\n[s]salir]>"); if( cFnGetChar() == 's')	return;
-
-
-
 
 /*
  * Tomado prestado de:
@@ -554,7 +501,56 @@ char cFnPausa();
 #define NR_LOCK		8
 
 #define MAX_DIACR	256
-#endif
 
+#endif
+/*@}*/
+
+char stBufferShell[TAMANIO_BUFFER_SHELL];
+
+char stBufferTeclado[TAMANIO_BUFFER_TECLADO];
+
+#define LARGO_MAPA_TECLADO 128
+
+//La constante TAMANIO_ARCHKM se genera cuando se hace 'make'
+#define CANTIDAD_KEYMAPS (TAMANIO_ARCHKM / sizeof(stuDefinicionTeclado))
+
+struct _stuKeyCode {
+    unsigned char tipo;
+    unsigned char ascii;
+};
+
+typedef struct _stuKeyCode stuKeyCode;
+
+/**
+ * Encapsula toda la informacion relativa a una distribucion de teclado
+ */
+struct _stuDefinicionTeclado {
+    char sCodigo [5];
+    char sNombre [25];
+    stuKeyCode stashMatrizNormal  [LARGO_MAPA_TECLADO];
+    stuKeyCode stashMatrizShifted [LARGO_MAPA_TECLADO];
+    stuKeyCode stashMatrizAltGred [LARGO_MAPA_TECLADO];
+} NOALIGN;
+
+typedef struct _stuDefinicionTeclado stuDefinicionTeclado;
+
+void vFnManejadorTecladoShell (unsigned char ucScanCode);
+void vFnScanCodeAKeyCode( stuKeyCode*, unsigned char );
+void vFnScanCodeExtAKeyCode( stuKeyCode*, unsigned char );
+void vFnKeyCodeNumPad( stuKeyCode* );
+int  iFnTeclaEspecial ( stuKeyCode, unsigned char );
+void * pvFnAbrirArchivoKeymap (void);
+int iFnCambiaTecladoI(unsigned int);
+int iFnCambiaTecladoS(char *);
+void vFnListarKeymaps();
+char cFnGetChar();
+char cFnPausa();
+
+/**
+	Permite realizar una pausa o cortar la ejecucion de una lista muy larga
+	de informacion, como por ejemplo la ayuda.
+	\date 13/04/2008
+*/
+#define SHELL_INTERACTIVO  vFnImprimir ("\n[s]salir]>"); if( cFnGetChar() == 's')	return;
 
 #endif //_TECLADO_H_

@@ -41,13 +41,13 @@ int main(){
 	waitpid( iPid, &iStatus, 0);
 	
 	iFnImprimirNumero( "\nMi hijo salio con el estado ", iStatus );
-	exit(0);
+	return 0;
 }
 
 
 int iFnImprimirNumero( const char *cncpBuffer, int iNumero ){
-//	write( 0, "\n ", 0 );
 	write( 0, cncpBuffer, 0 );
 	systest( iNumero );
+	return 0;
 }
 
