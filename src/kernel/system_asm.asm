@@ -457,7 +457,7 @@ vFnHandlerSyscall_Asm:
 				;que mandamos con anterioridad: 
 				;y así respetamos la convención CDECL
 
-	SALIDA_STACK_KERNEL
+	SALIDA_STACK_KRNL
 
 	iret
 

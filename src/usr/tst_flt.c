@@ -9,7 +9,7 @@ int main(){
     double fVar5;
 
     //fVar2 = 0;
-	/* Esto deberia generar una excepcion si fVar4 es 0
+	/* Esto deberia generar una excepcion si fVar2 es 0
 	 */
     fVar5 = fVar1 / fVar2;
 
@@ -27,6 +27,9 @@ int main(){
     					fVar3, fVar4, fVar3/fVar4);
 
 	iFnImprimir_usr("\nSoy el hijo, y ya termine (SALGO CON 42)\n");
-	
-	return 42;
+
+    exit( 42 );
+
+    //Para que no de warning
+    return 0;
 }

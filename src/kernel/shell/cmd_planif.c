@@ -95,43 +95,46 @@ void vFnSubCmdPlanifMostrar(){
 
 
 void vFnSubCmdPlanifSet(int iComandoPos){
-	char strPar[32];
-	char strVariable[32+1];
-	char strValor[32+1];
-	int i=0;
-	if(iFnGetArg (iComandoPos, 2, strPar, sizeof(strPar)) == 1){
-		while(strPar[i]!='='){
-			strVariable[i]=strPar[i];
-			i++;
-			if(strPar[i]=='\0')
-				break;
-		}
-		strVariable[i]='\0';
-		if(strPar[i]=='\0' || strPar[++i]=='\0' || strPar[0]=='='){
-			//es decir: tiene formato [planif set variable] o [planif set variable=]
-			vFnImprimir("\nParametros incorrectos, tipee [planif] para mas informacion");
-		}
-		else{
-			int j=i;
-			while(strPar[i]!='\0'){
-				strValor[i-j]=strPar[i];
-				i++;
-			}			
-			strValor[i-j]='\0';
-			
-			vFnImprimir("\nVariable: %s Valor: %s",strVariable,strValor);
-			
-			if(iFnCompararCadenas(strVariable,"quantum")==1){
-				
-				lFnSysSchedSetParam(iFnCtoi(strValor));
-				vFnImprimir("\n quantum= %d", uliQuantum);
+    char strPar[32];
+    char strVariable[32+1];
+    char strValor[32+1];
+    int i;
 
-			}
-			
-		}
-		
-	}
-	else{
-		vFnImprimir("\nIngrese el nombre de la variable y del valor correspondiente!!");
-	}
+    if(iFnGetArg (iComandoPos, 2, strPar, sizeof(strPar)) == 1) {
+        i = 0;
+        while( (strPar[i] != '=') && (strPar[i] != '\0') ) {
+            strVariable[i] = strPar[i];
+            i++;
+        }
+        strVariable[i] = '\0';
+        
+        /* Si tiene formato [planif set variable] o [planif set variable=],
+         * entonces falta el valor de la variable; informamos por pantalla.
+         */
+        /* NOTA: al evaluar la segunda condicion, el '++i' deja incrementado el
+         * valor de i; si se ejecuta la clausula ELSE, 'i' ya apunta al primer
+         * caracter despues del '='.
+         */
+        if(strPar[i]=='\0' || strPar[++i]=='\0' || strPar[0]=='=') {
+            vFnImprimir("\nParametros incorrectos, "
+                        "tipee [planif] para mas informacion");
+        } else {
+            int j = i;
+            while( strPar[i] != '\0' ) {
+                strValor[i-j] = strPar[i];
+                i++;
+            }			
+            strValor[i-j] = '\0';
+           
+            vFnImprimir("\nVariable: %s Valor: %s",strVariable,strValor);
+
+            if(iFnCompararCadenas(strVariable,"quantum")==1) {
+                lFnSysSchedSetParam(iFnCtoi(strValor));
+                vFnImprimir("\n quantum= %d", uliQuantum);
+            }
+        }
+    } else {
+        vFnImprimir("\nIngrese el nombre de la variable y "
+                    "el valor correspondiente!!");
+    }
 }

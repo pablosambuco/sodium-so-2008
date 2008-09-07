@@ -1128,7 +1128,7 @@ int iFnEliminarProceso( unsigned int uiProceso ) {
  * @brief Crea un nuevo proceso, pero compartiendo el segmento de datos y codigo
  * del proceso que lo llamo
  *
- * @returns La posicion dentro de la Tabla de PCBs del proceso creado
+ * @returns 0 si fue exitoso, distinto de 0 si hubo error
  */
 int iFnClonarProceso() {
     unsigned int uiIndiceGDT_TSS;

@@ -174,7 +174,10 @@ int main(){
 	iFnImprimirNumero("rem.tv_sec = ", rem.tv_sec);
 	iFnImprimirNumero("rem.tv_nsec = ", rem.tv_nsec);
 	
-	return 0;
+    exit(0);
+
+    //Para que no de warning
+    return 0;
 }
 
 // Funcion que recibe una fecha en formato de vector (año-mes-dia-hora-minuto-segundo)

@@ -41,6 +41,10 @@ int main(){
 	waitpid( iPid, &iStatus, 0);
 	
 	iFnImprimirNumero( "\nMi hijo salio con el estado ", iStatus );
+
+    exit(0);
+
+    //Para que no de warning
 	return 0;
 }
 
