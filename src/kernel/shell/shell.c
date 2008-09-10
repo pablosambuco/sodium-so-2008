@@ -919,6 +919,7 @@ void vFnMenuVer()
 }
 
 
+//TODO lala - Actualizar segun las nuevas estrategias de asm. de memoria
 /**
 \fn void vFnMenuMem()
 \brief  Muestra por pantalla información relevante a la memoria del Sistema
@@ -1681,7 +1682,9 @@ segmentos ocupados
 */
 void vFnMenuSegs()
 {
-	vFnMostrarMemoriaSegmentada();
+/* CHAU	vFnMostrarMemoriaSegmentada();*/
+    //TODO - Mostrar los segmentos ocupados, no solo los bloques libres
+    vFnListarBloquesLibres();
 }
 
 

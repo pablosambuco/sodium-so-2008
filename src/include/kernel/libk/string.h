@@ -6,7 +6,7 @@
 
 #include <kernel/definiciones.h>
 
-unsigned char* ucpFnCopiarMemoria(unsigned char *ucpDestino, 
+inline unsigned char* ucpFnCopiarMemoria(unsigned char *ucpDestino, 
 				  unsigned char *ucpOrigen, 
 				  unsigned int uiTamanio);
 

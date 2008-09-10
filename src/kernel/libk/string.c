@@ -7,18 +7,35 @@
 
 /**
  * @brief Copia 'size' bytes de 'orig' a 'dest'
- *
- * XXX Optimizar reescribiendo en inline assembler
+ * @date 
  */
-unsigned char* ucpFnCopiarMemoria( unsigned char *ucpDestino, unsigned char *ucpOrigen, unsigned int uiTamanio )
+inline unsigned char* ucpFnCopiarMemoria(
+        unsigned char *ucpDestino,
+        unsigned char *ucpOrigen,
+        unsigned int uiTamanio )
 {
-	unsigned char *ucpDestinoOriginal = ucpDestino;
+    /* Esta version en assembler es de 3 a 12 veces mas rapida (depende de la
+     * cantidad de bytes a copiar) que la version anterior hecha en C.
+     */
+    int d0, d1, d2;
 
-	while( uiTamanio-- )
-		*ucpDestino++ = *ucpOrigen++;
+    __asm__ __volatile__(
+        "rep ; movsl\n\t"
+        "testb $2,%b4\n\t"
+        "je 1f\n\t"
+        "movsw\n"
+        "1:\ttestb $1,%b4\n\t"
+        "je 2f\n\t"
+        "movsb\n"
+        "2:"
+        : "=&c" (d0), "=&D" (d1), "=&S" (d2)
+        :"0" (uiTamanio/4), "q" (uiTamanio),
+            "1" ((long) ucpDestino),"2" ((long) ucpOrigen)
+        : "memory");
 
-	return ucpDestinoOriginal;
+    return ucpDestino;
 }
+
 
 /**
  * iFnCompararCadenas: compara dos cadenas

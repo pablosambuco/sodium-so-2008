@@ -15,6 +15,9 @@ extern unsigned int uiTamanioMemoriaBios;
 ***************************************************************************/
 void vFnIniciarKMem()
 {
+//TODO - Actrualizar el footprint para que refleje los cambios hechos, a saber:
+// - El Limite para el HEAP del Kernel
+// - Los segmentos libres para procesos nuevos
 /* 
  * El footprint del sodium en memoria es similar al siguiente:
  * USO DE MEMORIA DESDE 0x0:
@@ -31,23 +34,27 @@ void vFnIniciarKMem()
  *   --- libre hasta fin de memoria (salvo que tengan menos de 16mb de memoria! ---
  */
 
-// Inicializamos DOS listas enlazadas: Una maneja la memoria libre que se encuentra por debajo de los 640kb, 
-// y la otra maneja la memoria por sobre 1MB
+    // Inicializamos DOS listas enlazadas:
+    // Una maneja la memoria libre que se encuentra por debajo de los 640kb,
+    // y la otra maneja la memoria por sobre 1MB
 
-	InicioMemoriaKernel.nTamanio = 0;
-//calculamos la dirección inicial del heap (tenemos la posición inicial de la IDT y conocemos su tamaño:
-	InicioMemoriaKernel.pNodoSig =
-	    (void *) ((unsigned int) pstuIDT + sizeof(stuIDT));
+    InicioMemoriaKernel.nTamanio = 0;
+    //Calculamos la dirección inicial del heap (tenemos la posición inicial de
+    //la IDT y conocemos su tamaño:
+    InicioMemoriaKernel.pNodoSig =
+        (void *) ((unsigned int) pstuIDT + sizeof(stuIDT));
 
-//calculamos el tamanio de memoria convencional libre reservando 1kb de memoria para stack de kernel.
-	((t_nodo *) InicioMemoriaKernel.pNodoSig)->nTamanio =
-	    uiTamanioMemoriaBaja - 1024 -
-	    (unsigned int) InicioMemoriaKernel.pNodoSig;
-	((t_nodo *) InicioMemoriaKernel.pNodoSig)->pNodoSig = NULL;
+    //Calculamos el tamanio de memoria convencional libre reservando 1kb
+    //de memoria para stack de kernel.
+    ((t_nodo *) InicioMemoriaKernel.pNodoSig)->nTamanio =
+        uiTamanioMemoriaBaja - 1024 -
+        (unsigned int) InicioMemoriaKernel.pNodoSig;
+    ((t_nodo *) InicioMemoriaKernel.pNodoSig)->pNodoSig = NULL;
 
-	InicioMemoriaAlta.nTamanio = 0;
-	InicioMemoriaAlta.pNodoSig = (void *) INICIO_MEMORIA_ALTA;
-	((t_nodo *) InicioMemoriaAlta.pNodoSig)->nTamanio = TAMANIO_HEAP_KERNEL; 
+    //Reservamos TAMANIO_HEAP_KERNEL para Heap del Kernel
+    InicioMemoriaAlta.nTamanio = 0;
+    InicioMemoriaAlta.pNodoSig = (void *) INICIO_MEMORIA_ALTA;
+    ((t_nodo *) InicioMemoriaAlta.pNodoSig)->nTamanio = TAMANIO_HEAP_KERNEL;
 // Antes se tomaba la memoria total:
 //  ((t_nodo *) InicioMemoriaAlta.pNodoSig)->nTamanio = 
 //	    uiTamanioMemoriaBios -
@@ -83,16 +90,16 @@ void *pvFnKMalloc(dword nTamanio, int iOpcion)
 
 
 	while ((pNodoActual = pUltimoNodo->pNodoSig) != NULL) {
-		/*
-		   En esta implementacin, los nodos de la lista dinamica de bloques libres
-		   se escriben a modo de encabezado al comienzo de cada uno de ellos. De
-		   esta manera se entiende que la direccin logica de cada nodo sumado el
-		   tamao de dicha estructura apunta directamente al comienzo de la memoria
-		   reservada.
+        /* En esta implementacin, los nodos de la lista dinamica de bloques
+         * libres se escriben a modo de encabezado al comienzo de cada uno de
+         * ellos. De esta manera se entiende que la direccion logica de cada
+         * nodo sumado al tamano de dicha estructura apunta directamente al
+         * comienzo de la memoria reservada.
 		 */
 
-		//Averigua si hay espacio suficiente para lo que pide el usuario + el tamanio
-		//de la estructura nodoOcupado, que almacena el tamanio del bloque actual.
+		//Averigua si hay espacio suficiente para lo que pide el usuario + el
+        //tamanio de la estructura nodoOcupado, que almacena el tamanio del
+        //bloque actual.
 		if (pNodoActual->nTamanio >=
 		    nTamanio + sizeof(t_nodoOcupado)) {
 			nResto =
@@ -111,14 +118,14 @@ void *pvFnKMalloc(dword nTamanio, int iOpcion)
 			pNodoOcupado->nTamanio =
 			    nTamanio + sizeof(t_nodoOcupado);
 			
-			vFnImprimir("\nPedido: %.2dkb", pNodoOcupado->nTamanio/1024);
-			return ((void *) ((void *) pNodoOcupado +
-					  sizeof(t_nodoOcupado)));
+			vFnLog("\npvFnKMalloc: Asignando %dKb en el Heap del Kernel",
+                    pNodoOcupado->nTamanio >> 10);
+			return ((void *) ((void *) pNodoOcupado + sizeof(t_nodoOcupado)));
 		}
 		//Si no hay espacio en el bloque actual avanzo al siguiente
 		pUltimoNodo = pNodoActual;
 	}	
-	vFnImprimir("\nSin memoria!");
+    vFnLog("\npvFnKMalloc: No se pudo asignar memoria en el Heap del Kernel");
 	return (NULL);
 }
 
@@ -164,15 +171,13 @@ void* pvFnKFree(void *pNodoOcupado)
 
 	//Chequeo el limite superior del bloque a liberar para saber si se puede
 	//unir a un bloque libre y asi formar uno solo con el posterior libre
-	if ((((byte *) pNodoOcupado) +
-	     ((t_nodoOcupado *) pNodoOcupado)->nTamanio ==
-	     (byte *) pNodoActual)
-	    && pNodoActual != NULL) {
-		((t_nodo *) pNodoOcupado)->nTamanio =
-		    ((t_nodoOcupado *) pNodoOcupado)->nTamanio +
-		    pNodoActual->nTamanio;
-		((t_nodo *) pNodoOcupado)->pNodoSig =
-		    pNodoActual->pNodoSig;
+	if ((((byte *) pNodoOcupado) + ((t_nodoOcupado *) pNodoOcupado)->nTamanio ==
+	     (byte *) pNodoActual) && pNodoActual != NULL) {
+        		((t_nodo *) pNodoOcupado)->nTamanio =
+		            ((t_nodoOcupado *) pNodoOcupado)->nTamanio +
+        		    pNodoActual->nTamanio;
+        		((t_nodo *) pNodoOcupado)->pNodoSig =
+                    pNodoActual->pNodoSig;
 	} else {
 		//Si no se puede unir a ningun bloque libre lo inserto en la lista
 		((t_nodo *) pNodoOcupado)->pNodoSig = pNodoActual;

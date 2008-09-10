@@ -28,7 +28,7 @@ unsigned char iMapaGDT[ TOTAL_ENTRADAS_GDT / 8 ];
 
 #define TOTAL_SEGMENTOS    (16 * 0x100000 / SEGMENT_SIZE) // mapeo 16 Mbs
 
-unsigned char iMapaSegmentos[ TOTAL_SEGMENTOS / 8 ];        
+//CHAU unsigned char iMapaSegmentos[ TOTAL_SEGMENTOS / 8 ];        
 
 #define _SET_BIT( bitmap, pos, set )                     \
     do{                                \
@@ -50,16 +50,14 @@ unsigned char iMapaSegmentos[ TOTAL_SEGMENTOS / 8 ];
 
 
 /**
- * @brief Inicializa la GDT
+ * @brief Inicializa la GDT, la tabla de PCBs y el bitmap de segmentos
  * @param Puntero a la GDT
  */
 void vFnGdtInicializar (dword pdwGDT) {
     int iN;
     pstuTablaGdt = (stuEstructuraGdt *) pdwGDT;
 
-    for (iN = 0; iN < CANTMAXPROCS; iN++) {
-      pstuPCB[iN].iEstado = PROC_NO_DEFINIDO;
-    }
+    /* Inicialización de GDT */
 
     for( iN = 0; iN < sizeof( iMapaGDT ) / sizeof( iMapaGDT[0]); iN++ )
         iMapaGDT[iN] = 0; // bloque de entradas de la GDT no utilizadas
@@ -68,14 +66,30 @@ void vFnGdtInicializar (dword pdwGDT) {
     mapa_gdt_set( 1, 1 ); /* descriptor codigo del kernel */
     mapa_gdt_set( 2, 1 ); /* descriptor datos+stack del kernel */
 
+    /* Inicialización de tabla de PCBs */
+
+    for (iN = 0; iN < CANTMAXPROCS; iN++) {
+      pstuPCB[iN].iEstado = PROC_NO_DEFINIDO;
+    }
+
+    /* Inicialización de memoria */
+    
+/* CHAU    //TODO - todo esto deberia desaparecer cuando se usen segmentos variables
     for( iN=0; iN < sizeof(iMapaSegmentos) / sizeof(iMapaSegmentos[0]); iN++) {
-      iMapaSegmentos[iN] = 0; // bloque de segmentos no utilizados
+      iMapaSegmentos[iN] = 0; // Bloque de segmentos no utilizados
     }
 
     //Se marcan como usados los "segmentos" que utiliza el kernel
-    for( iN = 0; iN < ((INICIO_MEMORIA_ALTA + TAMANIO_HEAP_KERNEL) / SEGMENT_SIZE); iN++) { 
-        mapa_segmentos_set( iN, 1 );
+    for(iN = 0;
+        iN < ((INICIO_MEMORIA_ALTA + TAMANIO_HEAP_KERNEL) / SEGMENT_SIZE);
+        iN++) { 
+            mapa_segmentos_set( iN, 1 );
     }
+*/
+
+    //TODO lala - Nuevo metodo de adm de memoria
+    //TODO revisar si corresponde llamar a la funcion aqui
+    vFnInicializarMemoriaSegmentada();
 }
 
 
@@ -227,14 +241,18 @@ unsigned int uiFnBuscarEntradaGDTLibre() {
 }
 
 
+//CHAU TODO - Eliminar esta funcion cuando se usen segmentos variables
 /**
  * @brief Busca un segmento de memoria libre (en el bitmap)
  * @returns El numero de segmento libre o 0 si no hay segmento libre
  * @date 04-02-2008
  */
-unsigned int uiFnBuscarSegmentoLibre() {
+/*unsigned int uiFnBuscarSegmentoLibre() {
     unsigned int uiPosicion = 0;
-  
+ 
+    //TODO lala - sacar
+    pvFnBuscarNodoAnteriorMemoriaLibre(SEGMENT_SIZE);
+
     while ( uiPosicion < TOTAL_SEGMENTOS ) {
         if ( !mapa_segmentos_get( uiPosicion ) ) {
             mapa_segmentos_set( uiPosicion, 1 ); // marcamos como usada
@@ -243,8 +261,8 @@ unsigned int uiFnBuscarSegmentoLibre() {
         uiPosicion++;
     }
 
-  return 0;
-}
+    return 0;
+}*/
 
 
 /**
@@ -436,37 +454,35 @@ int iFnCrearPCB( int iPosicion,
     pstuPCB[iPosicion].uiIndiceGDT_DS = uiIndiceGDT_DS;
     pstuPCB[iPosicion].uiIndiceGDT_TSS = uiIndiceGDT_TSS;
 
-    pstuPCB[iPosicion].vFnFuncion     = pEIP;
-    pstuPCB[iPosicion].iEstado         = PROC_LISTO;    //Lista para ejecucion
-    pstuPCB[iPosicion].ulLugarTSS     = uiPosTSS;
+    pstuPCB[iPosicion].vFnFuncion   = pEIP;
+    pstuPCB[iPosicion].iEstado      = PROC_LISTO;    //Lista para ejecucion
+    pstuPCB[iPosicion].ulLugarTSS   = uiPosTSS;
     pstuPCB[iPosicion].ulId         = uiUltimoPid++;
-    pstuPCB[iPosicion].ulParentId     = pstuPCB[ulProcActual].ulId;
-    pstuPCB[iPosicion].uiDirBase     = uiDirBase;
+    pstuPCB[iPosicion].ulParentId   = pstuPCB[ulProcActual].ulId;
+    pstuPCB[iPosicion].uiDirBase    = uiDirBase;
     pstuPCB[iPosicion].uiLimite     = uiLimite;
-    pstuPCB[iPosicion].stuTmsTiemposProceso    = tmsDefault;
+    pstuPCB[iPosicion].stuTmsTiemposProceso = tmsDefault;
     pstuPCB[iPosicion].timers[0]    = itimervalDefault;
     pstuPCB[iPosicion].timers[1]    = itimervalDefault;
     pstuPCB[iPosicion].timers[2]    = itimervalDefault;
-    pstuPCB[iPosicion].lNanosleep     = 0;
+    pstuPCB[iPosicion].lNanosleep   = 0;
     pstuPCB[iPosicion].puRestoDelNanosleep  = NULL;
     pstuPCB[iPosicion].uiTamProc    = 0;
-    pstuPCB[iPosicion].lPidTracer     = PROC_WOTRACER;
+    pstuPCB[iPosicion].lPidTracer   = PROC_WOTRACER;
 
-    for (iN = 0; iN < 12; iN++)
-      {
+    for (iN = 0; iN < 12; iN++) {
         pstuPCB[iPosicion].stNombre[iN] = stNombre[iN];
-      }
+    }
 
     pstuPCB[iPosicion].stNombre[iN] = '\0';
     
-    /*agregado por el grupo*/
+    /*Agregado por el grupo*/
     pstuPCB[iPosicion].iPrioridad = 0;
     
     pstuPCB[iPosicion].uiLimite     = uiLimite;
 
-    //inicializo el vector de memorias comartidas
-    for (iJ = 0; iJ < MAXSHMEMPORPROCESO; iJ ++)
-    {
+    //Inicializo el vector de memorias comartidas
+    for (iJ = 0; iJ < MAXSHMEMPORPROCESO; iJ ++) {
         pstuPCB[iPosicion].memoriasAtachadas[iJ].utilizada = FALSE;
     }
     
@@ -536,21 +552,6 @@ int iFnNuevaTarea( void *pEIP, char *stNombre )
     return iPosicion;
 }
 
-/**
- * @brief Copia 'size' bytes de 'orig' a 'dest'
- *
- * XXX Optimizar reescribiendo en inline assembler
- */
-unsigned char* ucpFnMemCopy( unsigned char *ucpDestino, unsigned char *ucpOrigen, unsigned int uiTamanio )
-{
-    unsigned char *ucpDestinoOriginal = ucpDestino;
-
-    while( uiTamanio-- )
-        *ucpDestino++ = *ucpOrigen++;
-
-    return ucpDestinoOriginal;
-}
-
 
 /**
  * @brief Instancia el proceso INIT para programas de usuario
@@ -570,17 +571,18 @@ int iFnInstanciarInit()
     iPosicion = iFnBuscarPCBLibre();
 
     __asm__ ("pushf\n pop %%eax": "=a" (iFlags):);
-    // si estaban habilitadas, aqui se deshabilitan
+    // Si estaban habilitadas, aqui se deshabilitan
     if (iFlags & 0x200){
         __asm__ ("cli"::);
         bInterrupcionesHabilitadas = 1;
     }
 
     // Se usa un unico segmento para Codigo y Datos
-    uiBaseSegmento = uiFnBuscarSegmentoLibre() * SEGMENT_SIZE;
+/* CHAU    uiBaseSegmento = uiFnBuscarSegmentoLibre() * SEGMENT_SIZE;*/
+    uiBaseSegmento = (unsigned int) pvFnReservarSegmento( SEGMENT_SIZE );
    
     //XXX - Agregado 04-02-2008
-    if( !iPosicion || !uiBaseSegmento ) {
+    if( !iPosicion || uiBaseSegmento==NULL ) {
         return -EAGAIN;
     }
 
@@ -702,7 +704,8 @@ int iFnInstanciarIdle()
     }
 
     // Se usa un unico segmento para Codigo y Datos
-    uiBaseSegmento = uiFnBuscarSegmentoLibre() * SEGMENT_SIZE;
+/* CHAU    uiBaseSegmento = uiFnBuscarSegmentoLibre() * SEGMENT_SIZE;*/
+    uiBaseSegmento = (unsigned int) pvFnReservarSegmento( SEGMENT_SIZE );
 
 
     /* TODO
@@ -816,9 +819,10 @@ int iFnDuplicarProceso( unsigned int uiProcPadre ){
     iPosicion = iFnBuscarPCBLibre();
 
     // Se usa un unico segmento para Codigo y Datos
-    uiBaseSegmento = uiFnBuscarSegmentoLibre() * SEGMENT_SIZE;
+/* CHAU    uiBaseSegmento = uiFnBuscarSegmentoLibre() * SEGMENT_SIZE;*/
+    uiBaseSegmento = (unsigned int) pvFnReservarSegmento( SEGMENT_SIZE );
 
-    if( !iPosicion || !uiBaseSegmento ) {
+    if( !iPosicion || uiBaseSegmento==NULL ) {
         return -EAGAIN;
     }
 
@@ -1099,7 +1103,11 @@ int iFnEliminarProceso( unsigned int uiProceso ) {
     vFnImprimir( "\n waitpid(): Liberando el segmento %d, base %x",
              pstuPCB[ uiProceso ].uiDirBase / SEGMENT_SIZE,
              pstuPCB[ uiProceso ].uiDirBase );
-    mapa_segmentos_set( pstuPCB[ uiProceso ].uiDirBase / SEGMENT_SIZE, 0 );
+/* CHAU    mapa_segmentos_set( pstuPCB[ uiProceso ].uiDirBase / SEGMENT_SIZE, 0 );
+*/
+    //TODO - lala
+    vFnLiberarSegmento( (void *)pstuPCB[ uiProceso ].uiDirBase,
+                        pstuPCB[ uiProceso ].uiLimite);
 
     /* Liberamos las 3 entradas de la GDT reservadas para el descriptor
      * de segmento de codigo, datos y TSS: */
@@ -1145,13 +1153,14 @@ int iFnClonarProceso() {
     }
 
     iPosicion = iFnBuscarPCBLibre();
-    uiBaseSegmento = uiFnBuscarSegmentoLibre() * SEGMENT_SIZE;
+/* CHAU    uiBaseSegmento = uiFnBuscarSegmentoLibre() * SEGMENT_SIZE;*/
+    uiBaseSegmento = (unsigned int) pvFnReservarSegmento( SEGMENT_SIZE );
 
     uiIndiceGDT_DS = uiFnBuscarEntradaGDTLibre();
     uiIndiceGDT_TSS = uiFnBuscarEntradaGDTLibre();
     //vFnImprimir("Indice GDT: %d\n",uiIndiceGDT_TSS);
 
-    ucpFnMemCopy(
+    ucpFnCopiarMemoria(
         (unsigned char*) &pstuTablaGdt->stuGdtDescriptorDescs[uiIndiceGDT_DS], 
         (unsigned char*) &pstuTablaGdt->
                 stuGdtDescriptorDescs[stuTSSTablaTareas[ulProcActual].ds / 8],
@@ -1160,9 +1169,9 @@ int iFnClonarProceso() {
                                     SEGMENT_SIZE / 4096 );
     //vFnImprimir("Copio ds\n");
 
-    ucpFnMemCopy(   (unsigned char*)uiBaseSegmento, 
-                    (unsigned char*)pstuPCB[ulProcActual].uiDirBase, 
-                    SEGMENT_SIZE );
+    ucpFnCopiarMemoria( (unsigned char*)uiBaseSegmento, 
+                        (unsigned char*)pstuPCB[ulProcActual].uiDirBase, 
+                        SEGMENT_SIZE );
     //vFnImprimir("Copio segmento\n");
 
     stuTSSTablaTareas[iPosicion].trapbit = 0;

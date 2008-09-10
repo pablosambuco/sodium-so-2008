@@ -16,7 +16,7 @@
 typedef struct nodo     
 {
     dword nTamanio;
-    void *pNodoSig;
+    struct nodo *pNodoSig;
 } t_nodo;
 
 /*!

@@ -616,11 +616,11 @@ vFnHandlerGenerico ()
 long
 lFnHandlerSyscall ( long eax, long ebx, long ecx, long edx )
 {
-	vFnLog("\nPid:%d\tT:%d\tHandler_Syscalls. eax=%x, ebx=%x, ecx=%x, edx=%x\n", 
+/*	vFnLog("\nPid:%d\tT:%d\tHandler_Syscalls. eax=%x, ebx=%x, ecx=%x, edx=%x", 
 						lFnSysGetPid(), 
 						uliClockTick,
 						eax, ebx, ecx, edx);
-
+*/
 
 	if (pstuPCB[ulProcActual].lPidTracer == 1) // si esta attached
 	{
