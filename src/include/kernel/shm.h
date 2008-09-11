@@ -64,9 +64,5 @@ void vFnVerShm();
 	\brief funcion llamada desde vfnPlanificador antes de realizar el context switch. Mantiene la memoria compartida.
 */
 void vFnCopiarVariablesCompartidas();
-/**
-	\brief funcion llamada desde vfnPlanificador antes de realizar el context switch. Copia las variables del proceso viejo al nuevo.
-*/
-void vFnCopiarVariable(void * dest, void * src, size_t tamanio);
 
 #endif

@@ -4,6 +4,7 @@ int iFnImprimirNumero( const char *cncpBuffer, int iNumero );
 
 int main_IPC(){
 	int i = 5;
+    int iPid,iStatus;
 	sem_t semaforo1;
 	sem_t semaforo2;
 //	unsigned long j;
@@ -22,7 +23,8 @@ int main_IPC(){
 		exit(1);
 	}
 
-	if( !fork() ){
+    iPid = fork();
+    if( !iPid ){
 
 		//HIJO
 		*shmvar = -999;
@@ -95,6 +97,8 @@ int main_IPC(){
 			exit(1);
 		}
 
+        //TODO - Revisar por que si no esperamos al hijo se genera una excepcion
+        waitpid( iPid, &iStatus, 0);
 		exit(0);
 	}
 	

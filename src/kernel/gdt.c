@@ -9,6 +9,8 @@
 #include <kernel/libk/string.h>
 #include <kernel/shm.h>
 
+#include <kernel/mem/memoria_s.h>
+
 extern dword pdwGDT;
 
 unsigned int uiUltimoPid = 0;
@@ -22,8 +24,8 @@ stuTSS stuTSSTablaTareas[CANTMAXPROCS];
 
 unsigned char iMapaGDT[ TOTAL_ENTRADAS_GDT / 8 ]; 
 
-//#define SEGMENT_SIZE    0x20000 // 128 Kb
-#define SEGMENT_SIZE    0x08000 // 32 Kb
+#define SEGMENT_SIZE    0x20000 // 128 Kb
+//#define SEGMENT_SIZE    0x08000 // 32 Kb
 //#define SEGMENT_SIZE    0x00800 // 2 Kb //Init no entra en 2Kb y explota!
 
 #define TOTAL_SEGMENTOS    (16 * 0x100000 / SEGMENT_SIZE) // mapeo 16 Mbs
@@ -89,7 +91,8 @@ void vFnGdtInicializar (dword pdwGDT) {
 
     //TODO lala - Nuevo metodo de adm de memoria
     //TODO revisar si corresponde llamar a la funcion aqui
-    vFnInicializarMemoriaSegmentada();
+    //CHAU nada de esto
+    //vFnInicializarMemoriaSegmentada();
 }
 
 

@@ -31,7 +31,7 @@ extern int iFmf, iCcmf, iMatrizMf[30][2];
  * @date 08-02-2008
  */
 void vFnInicializarMemoriaSegmentada() {
-    //TODO Reemplazar la suma de direcciones por MEMORIA_BASE cuando se actualice su valor
+/*    //TODO Reemplazar la suma de direcciones por MEMORIA_BASE cuando se actualice su valor
     uiTotalMemoriaLibre = uiTamanioMemoriaBios - (INICIO_MEMORIA_ALTA + TAMANIO_HEAP_KERNEL);
 
     //TODO Reemplazar la suma de direcciones por MEMORIA_BASE cuando se actualice su valor
@@ -44,6 +44,7 @@ void vFnInicializarMemoriaSegmentada() {
 
     vFnLog("\nINICIALIZANDO MEMORIA: %dMb disponibles para procesos",
             uiTotalMemoriaLibre >> 20);
+*/
 }
 
 
@@ -55,6 +56,7 @@ void vFnInicializarMemoriaSegmentada() {
  * (se debe castear a t_nodo*)
  * @date 08-02-2008
  */
+#if 0
 void * pvFnBuscarNodoAnteriorMemoriaLibre(unsigned int uiTamanioDeseado ) {
     t_nodo* pBloqueLibre;
 
@@ -80,6 +82,7 @@ void * pvFnBuscarNodoAnteriorMemoriaLibre(unsigned int uiTamanioDeseado ) {
 
     return NULL;
 }
+#endif
 
 
 /**
@@ -90,7 +93,8 @@ void * pvFnBuscarNodoAnteriorMemoriaLibre(unsigned int uiTamanioDeseado ) {
  * @date 08-02-2008
  */
 void * pvFnReservarSegmento(unsigned int uiTamanioDeseado) {
-    t_nodo * pNodoAnteriorAlSegmento;
+    return pvFnKMalloc(uiTamanioDeseado, MEM_ALTA | MEM_USUARIO);
+/*    t_nodo * pNodoAnteriorAlSegmento;
     t_nodo * pDireccionSegmento;
     t_nodo * pNuevoBloqueLibre;
 
@@ -146,6 +150,7 @@ void * pvFnReservarSegmento(unsigned int uiTamanioDeseado) {
             " libres", uiTamanioDeseado); 
 
     return NULL;
+*/
 }
 
 
@@ -156,7 +161,8 @@ void * pvFnReservarSegmento(unsigned int uiTamanioDeseado) {
  */
 void vFnLiberarSegmento( void * pInicioSegmento,
                          unsigned int uiTamanioSegmento ) {
-
+    pvFnKFree(pInicioSegmento);
+#if 0
     t_nodo* pNuevoLibre;
     t_nodo* pAux;
     t_nodo* pAModificar;
@@ -215,6 +221,7 @@ void vFnLiberarSegmento( void * pInicioSegmento,
 
     vFnLog("\npvFnLiberarSegmento: Se liberan %d bytes. Quedan %d bytes libres",
             uiTamanioSegmento, uiTotalMemoriaLibre);
+#endif
 }
 
 
@@ -222,7 +229,7 @@ void vFnLiberarSegmento( void * pInicioSegmento,
  * @brief Inserta un nodo en la lista de bloques libres, ordenado por tamanio
  * @param Puntero al nodo a insertar
  */
-void vFnInsertarBloqueLibreEnListaOrd( t_nodo * pNuevoNodo ) {
+/*void vFnInsertarBloqueLibreEnListaOrd( t_nodo * pNuevoNodo ) {
     t_nodo* pAux;
 
     //Busco la posicion de la lista en la cual insertar el nuevo nodo
@@ -235,14 +242,15 @@ void vFnInsertarBloqueLibreEnListaOrd( t_nodo * pNuevoNodo ) {
     //Inserto en la lista
     pNuevoNodo->pNodoSig = pAux->pNodoSig;
     pAux->pNodoSig = pNuevoNodo;
-}
+}*/
 
 
 /**
  * @brief Muestra por pantalla la lista de bloques de memoria libre
  */
 void vFnListarBloquesLibres() {
-    t_nodo *pNodoActual;
+    vFnListarKMem();
+/*    t_nodo *pNodoActual;
     unsigned int uiIndice;
 
     vFnImprimir("\nListado de bloques de memoria libres en memoria "
@@ -257,7 +265,7 @@ void vFnListarBloquesLibres() {
         uiIndice++;
     }
 
-    vFnImprimir("\n");
+    vFnImprimir("\n");*/
 }
 
 

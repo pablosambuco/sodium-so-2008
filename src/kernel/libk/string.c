@@ -353,7 +353,7 @@ pstFnConcatenarCadena (char * stCadena1, char * stCadena2)
 
 	iCantidadCadena1=iFnLongitudCadena(stCadena1);
 	iCantidadCadena2=iFnLongitudCadena(stCadena2);
-	stAux= pvFnKMalloc(iCantidadCadena1+iCantidadCadena2,MEM_ALTA);
+	stAux = pvFnKMalloc(iCantidadCadena1+iCantidadCadena2, MEM_DEFAULT);
 	if(stAux==NULL) return (stAux);
 	iN=0;
 	while (stCadena1[iN] != '\0')
@@ -426,7 +426,7 @@ pstFnCadenaIzquierda (char * stCadena, int iCantidad)
 	iCantidadCadena1=iFnLongitudCadena(stCadena);
 	if (iCantidadCadena1<iCantidad) return (NULL);
 	if (iCantidad<=0) return (NULL);
-	stAux= pvFnKMalloc(iCantidad+1,MEM_ALTA);
+	stAux= pvFnKMalloc(iCantidad+1, MEM_DEFAULT);
 	if(stAux==NULL) return (stAux);
 	for (iN=0;iN<iCantidad;iN++)
 	{
@@ -452,7 +452,7 @@ pstFnCadenaDerecha (char * stCadena, int iCantidad)
 	iCantidadCadena1=iFnLongitudCadena(stCadena);
 	if (iCantidadCadena1<iCantidad) return (NULL);
 	if (iCantidad<=0) return (NULL);
-	stAux= pvFnKMalloc(iCantidad+1,MEM_ALTA);
+	stAux= pvFnKMalloc(iCantidad+1, MEM_DEFAULT);
 	if(stAux==NULL) return (stAux);
 	if(iCantidadCadena1==iCantidad)
 		{

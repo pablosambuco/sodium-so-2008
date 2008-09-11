@@ -1,5 +1,5 @@
 /*!
- * \file memoria_k.H
+ * \file memoria_s.h
  * \brief Biblioteca de funciones y definiciones para memoria dinamica segmentada
  */
 #ifndef _MEMORIA_S_H

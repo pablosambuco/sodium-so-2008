@@ -7,8 +7,16 @@
 
 #include <kernel/definiciones.h>
 
-#define MEM_BAJA 1
-#define MEM_ALTA 2
+#define MEM_ALTA    0x00000000  //Primer bit
+#define MEM_BAJA    0x00000001
+
+#define MEM_KERNEL  0x00000000  //Segundo bit
+#define MEM_USUARIO 0x00000002
+
+#define MEM_DEFAULT (MEM_ALTA | MEM_KERNEL)
+
+#define GET_MEM_ALTA_BAJA(X)        ( (X) & 0x00000001 )    //Primer Bit
+#define GET_MEM_KERNEL_USUARIO(X)   ( (X) & 0x00000002 )    //Segundo Bit
 
 /*!
  * \brief Tipo de datos para apuntar a un nodo libre
@@ -25,6 +33,7 @@ typedef struct nodo
 typedef struct nodoOcupado 
 {
     dword nTamanio;
+    unsigned int uiOpciones;
 } t_nodoOcupado;
 
 
@@ -33,7 +42,7 @@ extern t_nodo InicioMemoria; /*!< Variable global utilizada para indicar el comi
 /*!
  * \brief Funcion para la alocacion dinamica de memoria
  */
-void *pvFnKMalloc(dword tamanio, int opciones);   
+void *pvFnKMalloc(dword nTamanio, unsigned int uiOpciones);
 /*!
  * \brief Funcion para la liberacion de memoria dinamica
  */

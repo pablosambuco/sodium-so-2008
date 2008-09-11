@@ -21,7 +21,7 @@ extern stuVentana pstuVentana[HWND_VENTANA_MAX]; /*!< Extern a estructura que gu
 stDiscoRAM stDiscosRAM[CANTMAXDISCOSRAM]; /*!< Vector de descriptores de discos RAM */
 
 /**
- * \brief Funci�n que inicializa los discos RAM.
+ * \brief Funcion que inicializa los discos RAM.
  * 
  * Inicializa tres discos RAM, cargando valores apropiados en el vector de 
  * estructuras stDiscosRAM[].
@@ -30,11 +30,11 @@ stDiscoRAM stDiscosRAM[CANTMAXDISCOSRAM]; /*!< Vector de descriptores de discos 
  *  - El DISCO_LOG se define en memoria alta, tomando relativamente gran
  *  capacidad (3MB), que ser� destinada a guardar los logs generados durante
  *  las pruebas.
- *  - El DISCO_LOTES es m�s peque�o y se utilizar� temporalmente para editar
- *  los lotes de pruebas. Tambi�n se define en memoria alta.
+ *  - El DISCO_LOTES es mas pequeno y se utilizara temporalmente para editar
+ *  los lotes de pruebas. Tambien se define en memoria alta.
  *
- * \returns Entero que indica EXITO si la operaci�n se realiz� correctamente o
- * 	un c�digo de error.
+ * \returns Entero que indica EXITO si la operacion se realizo correctamente o
+ * 	un codigo de error.
  * \sa ucpFnCopiarMemoria()
  */
 
@@ -62,13 +62,14 @@ int iFnRamFsInit(void)
 	ucpFnCopiarMemoria((unsigned char *) &(disco_lotes->strPMontaje),
 			   (unsigned char *) "/mnt/lotes", 10);
 
-// El disco usuario se ubica en memoria baja porque es el que tiene que 
-// apropiarse de la info que subimos del disquete en modo real.
-// Los dem�s discos no tienen esta restricci�n.
+    /* El disco usuario se ubica en memoria baja porque es el que tiene que
+     * apropiarse de la info que subimos del disquete en modo real.
+     * Los demas discos no tienen esta restriccion.
+     */
 	disco_usr->dwTamanio = 100 * 1024;	//intento reservar 100kb
 
 	if ((disco_usr->dwDireccionInicial =
-	     (dword) pvFnKMalloc(disco_usr->dwTamanio, MEM_BAJA)) == 0) {
+	     (dword) pvFnKMalloc(disco_usr->dwTamanio, MEM_BAJA))== 0) {
 		vFnImprimir
 		    ("\nNo se pudo reservar suficiente memoria para el disco %s",
 		     disco_usr->strEtiqueta);
@@ -94,7 +95,7 @@ int iFnRamFsInit(void)
 	disco_lotes->dwTamanio = 20 * 1024;	//intento reservar 20kb
 
 	if ((disco_lotes->dwDireccionInicial =
-	     (dword) pvFnKMalloc(disco_lotes->dwTamanio, MEM_ALTA)) == 0) {
+        (dword) pvFnKMalloc(disco_lotes->dwTamanio, MEM_ALTA)) == 0) {
 		vFnImprimir
 		    ("\nNo se pudo reservar suficiente memoria para el disco %s",
 		     disco_lotes->strEtiqueta);

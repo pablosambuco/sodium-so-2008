@@ -19,23 +19,15 @@ extern short int bPlanificador;
 extern unsigned long uliQuantum;
 extern unsigned long uliBTSQ;
 
-// Ver declaraci�n en system.c
+/* Todas estas variables, ver declaracion en system.c */
 extern unsigned long ulTiempo;
-// Ver declaraci�n en system.c
 extern int iMinuteswest;
-// Ver declaraci�n en system.c
 extern unsigned int iMilisegundosPorTick;
-// Ver declaraci�n en system.c
 extern long lRelojOffset;
-// Ver declaraci�n en system.c
 extern long lRelojFrequencia;
-// Ver declaraci�n en system.c
 extern long lRelojMaxerror;
-// Ver declaraci�n en system.c
 extern long lRelojEsterror;
-// Ver declaraci�n en system.c
 extern long lRelojConstante;
-// Ver declaraci�n en system.c
 extern int iRelojEstado;
 
 extern void vFnIniciarTimer_Asm(int divisor);
@@ -55,6 +47,8 @@ extern void vFnIniciarTimer_Asm(int divisor);
 		 :: "a"( ds ),			\
 		    "b"( offset ),		\
 		    "c"( val ) )
+
+
 /******************************************************************************
 Funcion:
 Descripcion:
@@ -143,6 +137,8 @@ long lFnSysWrite(int fd, const void *buf, size_t count)
 				       (unsigned int) buf));
 	return count;		/* supuestamente devuelve la cantidad de bytes escritos */
 }
+
+
 /******************************************************************************
 Funcion:
 Descripcion:
