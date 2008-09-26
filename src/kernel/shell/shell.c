@@ -843,7 +843,7 @@ void vFnMenuKill(int iComandoPos)
 void vFnMenuInstanciarInit()
 {
     unsigned int uiPosicion;
-    unsigned int uiStatus;
+    int iStatus;
     long lRetorno;
 	
     uiPosicion = iFnInstanciarInit();
@@ -851,7 +851,7 @@ void vFnMenuInstanciarInit()
     //TODO - Revisar si esto es correcto
     //Esperamos a Init, asi no queda zombie, y ademas, lFnSysWaitPid se encarga
     //de eliminar el segmento del proceso hijo, por lo que no perdemos memoria
-    lRetorno = lFnSysWaitPid( pstuPCB[uiPosicion].ulId, &uiStatus, 0 );
+    lRetorno = lFnSysWaitPid( pstuPCB[uiPosicion].ulId, &iStatus, 0 );
 }
 
 /**

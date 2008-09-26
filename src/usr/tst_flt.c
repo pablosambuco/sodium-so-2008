@@ -1,4 +1,4 @@
-//#include <usr/libsodium.h>
+#include <usr/libsodium.h>
 #include <usr/sodstdio.h>
 
 int main(){

@@ -20,9 +20,6 @@
 #ifndef __SODSTDIO_H_
 #define __SODSTDIO_H_
 
-#include <usr/libsodium.h>
-#include <usr/sodstdlib.h>
-
 /**
  * \brief Imprime la cadena que recibe como argumento
  */

@@ -13,16 +13,22 @@ OBJETOS_USR:= reloj.o \
               tst_ipc.bin \
               tst_time.bin \
               tst_flt.bin \
+              tst_memd.bin \
               prog.bin \
               prog_wrapper.o \
               p1.bin
 
+OBJETOS_LIBSODIUM:= sodstdio.o \
+                    sodstdlib.o \
+                    sodstdlib_asm.o \
+					memoria_dinamica.o
+
 all:	$(OBJETOS_USR)  
 
 clean:
-	$(RM) *.lst *.bin *.o *.s *.i *.ld *.sys mapa_memoria.txt init_wrapper.c prog_wrapper.c idle_wrapper.c
+	$(RM) *.lst *.bin *.o *.s *.i *.ld *.sys libsodium.tmp mapa_memoria.txt init_wrapper.c prog_wrapper.c idle_wrapper.c
 
-install: init.bin prog.bin p1.bin idle.bin tst_ptrc.bin tst_sgnl.bin tst_ipc.bin tst_time.bin tst_flt.bin 
+install: init.bin prog.bin p1.bin idle.bin tst_ptrc.bin tst_sgnl.bin tst_ipc.bin tst_time.bin tst_flt.bin tst_memd.bin
 	-mount $(DIR_MOUNT)
 	cp prog.bin  $(DIR_MOUNT)/
 	cp init.bin $(DIR_MOUNT)/
@@ -31,10 +37,22 @@ install: init.bin prog.bin p1.bin idle.bin tst_ptrc.bin tst_sgnl.bin tst_ipc.bin
 	cp tst_ipc.bin $(DIR_MOUNT)/
 	cp tst_time.bin $(DIR_MOUNT)/
 	cp tst_flt.bin $(DIR_MOUNT)/
+	cp tst_memd.bin $(DIR_MOUNT)/
 	cp idle.bin $(DIR_MOUNT)/
 	cp p1.bin $(DIR_MOUNT)/
 	cp $(DIR_TECLADO)/keymaps.bin $(DIR_MOUNT)/
 	umount $(DIR_MOUNT)
+
+# ATENCION: El 'ld' de libsodium se hace INCREMENTAL (opcion -r) ya que luego se
+# 			debe linkear con los programas de usuario.
+# 			De esta manera libsodium.o ya tiene todas las bibliotecas comunes.
+# 			Esta NO es la mejor forma de hacerlo, pero sirve, al menos hasta que
+# 			Sodium soporte bibliotecas dinamicas
+libsodium.o: libsodium.tmp $(OBJETOS_LIBSODIUM)
+	ld -o $@ --cref -N -r libsodium.tmp $(OBJETOS_LIBSODIUM)
+
+libsodium.tmp: libsodium.c
+	$(CC) $(CFLAGS) -c $^ -o $@
 
 p1.bin: p1.o libsodium.o
 	ld --cref -o p1.ld -Ttext 0x0 -N -e main $^
@@ -76,15 +94,12 @@ idle_wrapper.c: idle.bin
 	echo "unsigned int __idle_size(){ return sizeof(__idle); }" >> $@
 	echo "unsigned char *__idle_begin(){ return __idle; }" >> $@
 
-tst_flt.bin: tst_flt.o libsodium.o sodstdio.o sodstdlib.o sodstdlib_asm.o
-	ld --cref -o tst_flt.ld -Ttext 0x0 -N -e main $^
-	objcopy -R .comment -R .note -S -O binary tst_flt.ld $@
-
 tst_%.bin: tst_%.o libsodium.o
 	ld --cref -o tst_$*.ld -Ttext 0x0 -N -e main $^
 	objcopy -R .comment -R .note -S -O binary tst_$*.ld $@
 
 %.o: %.c
+	$(MAKEDEPEND) -- $(CFLAGS) $^
 	$(CC) $(CFLAGS) -c $<
 
 %.o: %.asm
@@ -92,3 +107,26 @@ tst_%.bin: tst_%.o libsodium.o
 
 %.bin: %.asm
 	$(AS) -o $@ $< -l $@.lst
+
+
+# NO EDITAR EL MAKEFILE POR DEBAJO DE ESTA LINEA, SE MODIFICA AUTOMATICAMENTE
+# NO SACAR LA LINEA ESCRITA EN INGLES, MARCA EL INICIO DE LO QUE MAKEDEPEND TOCA
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+p1.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+p1.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+p1.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+p1.o: ../include/kernel/definiciones.h ../include/usr/memoria_dinamica.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/memoria_dinamica.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h

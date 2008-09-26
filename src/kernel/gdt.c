@@ -24,8 +24,8 @@ stuTSS stuTSSTablaTareas[CANTMAXPROCS];
 
 unsigned char iMapaGDT[ TOTAL_ENTRADAS_GDT / 8 ]; 
 
-#define SEGMENT_SIZE    0x20000 // 128 Kb
-//#define SEGMENT_SIZE    0x08000 // 32 Kb
+//#define SEGMENT_SIZE    0x20000 // 128 Kb
+#define SEGMENT_SIZE    0x08000 // 32 Kb
 //#define SEGMENT_SIZE    0x00800 // 2 Kb //Init no entra en 2Kb y explota!
 
 #define TOTAL_SEGMENTOS    (16 * 0x100000 / SEGMENT_SIZE) // mapeo 16 Mbs

@@ -19,7 +19,7 @@ int main(){
 	if( !iPid ){
     	iFnImprimirNumero( "\nSoy el hijo, mi pid es ", getpid() );
 		/* Ejercicio para el lector: Modificar iOpcion en tiempo de ejecucion, mediante algun debugger primero, y hackeando sodium luego, para que se ejecuten las distintas pruebas */
-		iOpcion=4;
+		iOpcion = 6;
 		switch(iOpcion)
 		{
 			case 1: execve( "TST_PTRC.BIN", 0, 0 );
@@ -31,6 +31,8 @@ int main(){
 			case 4: execve( "TST_IPC.BIN", 0, 0 );
 				break;
 			case 5: execve( "TST_FLT.BIN", 0, 0 );
+				break;
+			case 6: execve( "TST_MEMD.BIN", 0, 0 );
 				break;
 			default:
 				iFnImprimirNumero( "\nLa opcion no es valida! ", iStatus );

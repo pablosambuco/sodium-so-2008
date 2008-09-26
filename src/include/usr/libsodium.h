@@ -3,14 +3,22 @@
 	\brief Funciones de biblioteca del usuario del sistema
 */
 #ifndef __LIB_SODIUM_H
-#define   __LIB_SODIUM_H
+#define __LIB_SODIUM_H
 
 #include <kernel/syscall.h>
+#include <usr/memoria_dinamica.h>
+
+//TODO - Generar archivo de definiciones propio de lado usuario
+#include <kernel/definiciones.h>    //Tipos de variables, NULL, etc 
 
 #define RR 1
 #define FIFO 0
 #define BTS 2
 
+
+/*
+ * \brief Variable errno, analoga a errno de libc
+ */
 extern int errno;
 
 /**
@@ -71,9 +79,12 @@ int ptrace( int iRrequest, int iPid, void *pvAddr, void *pvData );
 /*@}*/
 
 
+
+
 typedef char* va_list;
 
-// macros
+// MACROS
+
 /**
  *  \brief Constantes que representan los colores
  *

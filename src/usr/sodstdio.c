@@ -1,5 +1,8 @@
 #include <usr/sodstdio.h>
 
+#include <usr/libsodium.h>
+#include <usr/sodstdlib.h>
+
 /* ATENCION: Este archivo esta basado en kernel/video.c
  * Cualquier modificacion que se haga en este archivo debe ser tenida en cuenta
  * para ser incluida en el archivo original mencionado y viceversa.
