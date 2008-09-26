@@ -46,7 +46,7 @@ void * malloc (unsigned int uiTamanioDeseado) {
     if( !stcExisteHeap ) {
         //TODO - Crear el heap
         //TODO - Agrandar el segmento (REFACTORIZAR)
-        pcAntiguoFinDeSegmento = (void*)(-1); //TODO - sbrk(...);
+        pcAntiguoFinDeSegmento = (void*)0x3FFF;//(void*)(-1); //TODO- sbrk(...);
        
         stuListaBloquesLibres.pNodoSig = NULL;
 
@@ -56,7 +56,7 @@ void * malloc (unsigned int uiTamanioDeseado) {
             return NULL;
         }
 
-        pcFinDeSegmento = NULL; //TODO - sbrk( 0 );
+        pcFinDeSegmento = 0x8000;//NULL; //TODO - sbrk( 0 );
         
         //Se apunta la lista al nuevo bloque libre
         stuListaBloquesLibres.pNodoSig = (void *) pcAntiguoFinDeSegmento;
@@ -214,7 +214,8 @@ void free( void * pInicioBloque ) {
     //Inserto el nuevo bloque libre en la lista
     vFnInsertarBloqueLibreEnListaOrd( pNuevoLibre );
 
-    iFnImprimir_usr("\nfree: Se liberaron %d bytes.", uiTamanioBloque);
+    iFnImprimir_usr("\nfree: Se liberaron %d bytes.",
+                                    uiTamanioBloque - sizeof(t_nodoOcupado));
 }
 
 
@@ -263,8 +264,8 @@ void * pvFnBuscarNodoAnteriorMemoriaLibre(unsigned int uiTamanioDeseado ) {
 
     if( pBloqueLibre->pNodoSig != NULL ) {
             //Se encontro un bloque que sirve para crear el nuevo bloque
-            iFnImprimir_usr("\nSe encontro un bloque de memoria libre de %dKb",
-                    pBloqueLibre->pNodoSig->nTamanio >> 10);
+            iFnImprimir_usr("\nSe encontro un bloque de memoria libre de %d "
+                    "bytes", pBloqueLibre->pNodoSig->nTamanio);
 
             return (void *) pBloqueLibre;
     }
