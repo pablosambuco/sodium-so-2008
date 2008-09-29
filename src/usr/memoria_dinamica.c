@@ -4,6 +4,7 @@
 //TODO - lala - sacar
 #include <usr/sodstdio.h>
 
+
 /* TODO
  * Describir la estrategia de Gestion de Memoria Dinamica a nivel usuario
  */
@@ -31,11 +32,11 @@ void * malloc (unsigned int uiTamanioDeseado) {
      * final del segmento de datos; el fin del Heap concide con el fin del
      * segmento de datos.
      */
-    char * pcFinDeSegmento; 
-    static char * pcAntiguoFinDeSegmento; 
+    char * pcFinDeHeap; 
+    static char * pcAntiguoFinDeHeap; 
 
     static char stcExisteHeap = 0;
-
+    
     if(uiTamanioDeseado == 0) {
         iFnImprimir_usr("\nmalloc: Si no quiere memoria, no moleste!");
         return NULL;
@@ -44,70 +45,79 @@ void * malloc (unsigned int uiTamanioDeseado) {
     //Esta parte SOLO SE EJECUTA LA PRIMERA VEZ que se llama a malloc.
     //Se encarga de crear el Heap y de inicializar la lista de espacios libres.
     if( !stcExisteHeap ) {
-        //TODO - Crear el heap
-        //TODO - Agrandar el segmento (REFACTORIZAR)
-        pcAntiguoFinDeSegmento = (void*)0x3FFF;//(void*)(-1); //TODO- sbrk(...);
-       
+
         stuListaBloquesLibres.pNodoSig = NULL;
 
-        if( (int)pcAntiguoFinDeSegmento == (-1) ) {
+        //Se crea el Heap, agrandando el segmento
+        if( iFnAgrandarHeap( HEAP_TAMANIO_INICAL,
+                              &pcAntiguoFinDeHeap, &pcFinDeHeap) != 0 ) {
             //Si el SO no nos da mas memoria no se puede hacer el malloc
             iFnImprimir_usr("\nmalloc: Imposible crear Heap");
             return NULL;
         }
 
-        pcFinDeSegmento = 0x8000;//NULL; //TODO - sbrk( 0 );
-        
         //Se apunta la lista al nuevo bloque libre
-        stuListaBloquesLibres.pNodoSig = (void *) pcAntiguoFinDeSegmento;
+        stuListaBloquesLibres.pNodoSig = (void *) pcAntiguoFinDeHeap;
         stuListaBloquesLibres.nTamanio = 0;
        
         //Se crea el encabezado del bloque
-        (stuListaBloquesLibres.pNodoSig)->nTamanio = pcFinDeSegmento -
-            pcAntiguoFinDeSegmento; //Cuidado al cambiar: resta de punteros
+        (stuListaBloquesLibres.pNodoSig)->nTamanio = pcFinDeHeap -
+            pcAntiguoFinDeHeap; //Cuidado al cambiar: resta de punteros
         (stuListaBloquesLibres.pNodoSig)->pNodoSig = NULL;
        
-        //Se deja inicializado
-        pcAntiguoFinDeSegmento = pcFinDeSegmento;
- 
         iFnImprimir_usr("\nmalloc: Se creo un Heap de %d bytes.",
-                pcFinDeSegmento - pcAntiguoFinDeSegmento);
+                pcFinDeHeap - pcAntiguoFinDeHeap);
 
+        //Se deja inicializado
+        pcAntiguoFinDeHeap = pcFinDeHeap;
+ 
         stcExisteHeap = 1; //Ya creamos el Heap, esto no se ejecuta mas
     }
 
     //Se busca un bloque libre
-    //La funcion pvFnBuscarNodoAnteriorMemoriaLibre retorna un puntero al
-    //nodo de la lista de libres que precede al bloque encontrado
+    /* La funcion pvFnBuscarNodoAnteriorMemoriaLibre retorna un puntero al
+     * nodo de la lista de libres que precede al bloque encontrado o un puntero
+     * al ultimo nodo de la lista si no encontro el espacio necesario
+     */
     pNodoAnteriorAlBloque =
         (t_nodo*)pvFnBuscarNodoAnteriorMemoriaLibre( uiTamanioDeseado + 
                                                     sizeof(t_nodoOcupado) );
 
-    //Si no se encontro espacio contiguo libre
-    if (pNodoAnteriorAlBloque == NULL) {
-        iFnImprimir_usr("\nmalloc: No se encontraron %d bytes de memoria libre "
-                "en el heap, intentando redimensionar el segmento.",
-                uiTamanioDeseado);
+    //Si no se encontro espacio contiguo libre, tenemos un puntero al ultimo
+    //nodo de la lista
+    if (pNodoAnteriorAlBloque->pNodoSig == NULL) {
+        iFnImprimir_usr("\nmalloc: No se encontraron %d bytes libres en el "
+                "heap, intentando redimensionar el segmento.",uiTamanioDeseado);
 
         //Se intenta agrandar el segmento
-        //TODO - Agrandar el segmento (REFACTORIZAR)
-        pcFinDeSegmento = NULL; //TODO - sbrk( ... ); puede ser una variable aux
-       
-        if( (int)pcFinDeSegmento == -1 ) {
+        if( iFnAgrandarHeap( HEAP_INCREMENTO,
+                              &pcAntiguoFinDeHeap, &pcFinDeHeap) != 0 ) {
             //Si el SO no nos da mas memoria no se puede hacer el malloc
+            iFnImprimir_usr("\nmalloc: Imposible agrandar Heap");
             return NULL;
         }
+        
+        //Si el ultimo nodo libre llegaba hasta el final del segmento, se le
+        //acopla el nuevo espacio libre, si no, se crea un nuevo nodo
+        if( pcAntiguoFinDeHeap == ( (char*)pNodoAnteriorAlBloque) + 
+                                        pNodoAnteriorAlBloque->nTamanio ) {
+            iFnImprimir_usr("\nmalloc: Acoplando espacio libre al ultimo nodo.");
+            pNodoAnteriorAlBloque->nTamanio +=
+                                    pcFinDeHeap - pcAntiguoFinDeHeap;
 
-        pcFinDeSegmento = NULL; //TODO - sbrk( 0 );
+            //Se busca el anterior al bloque libre (ahora sabemos que existe)
+            pNodoAnteriorAlBloque = (t_nodo*)pvFnBuscarNodoAnteriorMemoriaLibre(
+                                    uiTamanioDeseado + sizeof(t_nodoOcupado) );
+        } else {
+            iFnImprimir_usr("\nmalloc: Creando nuevo bloque de espacio libre.");
+            //Se lo agrega a la lista de libres (SIEMPRE sera el ultimo nodo)
+            pNodoAnteriorAlBloque->pNodoSig = (t_nodo *) pcAntiguoFinDeHeap;
+            pNodoAnteriorAlBloque->pNodoSig->pNodoSig = NULL;
+            pNodoAnteriorAlBloque->pNodoSig->nTamanio =
+                                    pcFinDeHeap - pcAntiguoFinDeHeap;
+        }
 
-        //Se calcula la direccion del nuevo bloque libre
-        pNuevoBloqueLibre = (t_nodo *) pcAntiguoFinDeSegmento;
-        //Se calcula su tamanio
-        pNuevoBloqueLibre->nTamanio = pcFinDeSegmento - pcAntiguoFinDeSegmento;
-        //Se lo agrega a la lista de libres
-        vFnInsertarBloqueLibreEnListaOrd( pNuevoBloqueLibre );
-
-        pcAntiguoFinDeSegmento = pcFinDeSegmento;
+        pcAntiguoFinDeHeap = pcFinDeHeap;
     }
 
     //Existe espacio libre suficiente y es contiguo
@@ -134,7 +144,8 @@ void * malloc (unsigned int uiTamanioDeseado) {
     //Se graba el tamanio del bloque que se acaba de crear
     ((t_nodoOcupado *)pDirBloque)->nTamanio = uiTamanioDeseado;
 
-    iFnImprimir_usr("\nmalloc: Se reservaron %d bytes.", uiTamanioDeseado);
+    iFnImprimir_usr("\nmalloc: Se reservaron %d bytes (+%d de control).",
+            uiTamanioDeseado, sizeof(t_nodoOcupado) );
 
     return (void *) ((char*)pDirBloque + sizeof(t_nodoOcupado));
 }
@@ -160,17 +171,21 @@ void free( void * pInicioBloque ) {
     }
 
     //Creo un nuevo nodo para la lista de bloques libres. Todavia no lo enalzo.
-    pNuevoLibre = (t_nodo*) ( pInicioBloque - sizeof(t_nodoOcupado) );
-    //nTamanio es el primer campo en ambas estructuras (t_nodo y t_nodoOcupado),
-    //por lo que ya se tiene el tamanio del bloque cargado en la estructura.
-    //nTamanio NO incluye la informacion de control (t_nodoOcupado)
+    pNuevoLibre = (t_nodo*) ( (char*) pInicioBloque - sizeof(t_nodoOcupado) );
+    /* nTamanio es el primer campo en ambas estructuras (t_nodo y t_nodoOcupado)
+     * por lo que ya se tiene el tamanio del bloque cargado en la estructura,
+     * pero nTamanio de t_nodoOPcupado NO incluye la informacion de control y
+     * nTamanio de t_nodo SI la incluye, por eso debemos sumarsela.
+     */
+    pNuevoLibre->nTamanio += sizeof(t_nodoOcupado);
 
-    //Se calcula el tamanio de memoria que quedara libre
+    //TODO - Sacar:
+    //Se guarda el tamanio de memoria que quedara libre (solo para mostrar)
     uiTamanioBloque =
-        ((t_nodoOcupado *)pNuevoLibre)->nTamanio + sizeof(t_nodoOcupado);
+        ((t_nodoOcupado *)pNuevoLibre)->nTamanio - sizeof(t_nodoOcupado);
 
     /* Recorro la lista de bloques vacios buscando un bloque libre ANTERIOR que
-     * sea adyacente al bloque a liberar. Guardo la direccion del nodos que lo
+     * sea ADYACENTE al bloque a liberar. Guardo la direccion del nodo que lo
      * apunta (y no la del nodo en si mismo) por si debe moverse.
      */
     pAux = &stuListaBloquesLibres;
@@ -191,7 +206,7 @@ void free( void * pInicioBloque ) {
     }
 
     /* Recorro la lista de bloques vacios buscando un bloque libre POSTERIOR
-     * que sea adyacente al bloque a liberar. Guardo la direccion del nodo que
+     * que sea ADYACENTE al bloque a liberar. Guardo la direccion del nodo que
      * los apunta (y no la del nodo en si mismo) por si debe moverse.
      */
     pAux = &stuListaBloquesLibres;
@@ -214,8 +229,8 @@ void free( void * pInicioBloque ) {
     //Inserto el nuevo bloque libre en la lista
     vFnInsertarBloqueLibreEnListaOrd( pNuevoLibre );
 
-    iFnImprimir_usr("\nfree: Se liberaron %d bytes.",
-                                    uiTamanioBloque - sizeof(t_nodoOcupado));
+    iFnImprimir_usr("\nfree: Se liberaron %d bytes (+%d de control).",
+            uiTamanioBloque, sizeof(t_nodoOcupado) );
 }
 
 
@@ -243,9 +258,9 @@ void vFnInsertarBloqueLibreEnListaOrd( t_nodo * pNuevoNodo ) {
  * @brief Busca un bloque de memoria libre de uiTamanio bytes
  * @param Tamanio en bytes del bloque libre buscado
  * @returns La direccion del nodo de la lista de bloques libres QUE APUNTA al
- * bloque libre encontrado (nodo anterior) o NULL si no se encontraron bloques
- * (se debe castear a t_nodo*)
- * @date 02-08-2008
+ * bloque libre encontrado (nodo anterior) o la direccion del untlimo nodo de la
+ * lista si no se encontraron bloques (se debe castear a t_nodo*)
+ * @date 28-09-2008
  */
 void * pvFnBuscarNodoAnteriorMemoriaLibre(unsigned int uiTamanioDeseado ) {
     t_nodo* pBloqueLibre;
@@ -261,15 +276,69 @@ void * pvFnBuscarNodoAnteriorMemoriaLibre(unsigned int uiTamanioDeseado ) {
           pBloqueLibre->pNodoSig->nTamanio < uiTamanioDeseado+sizeof(t_nodo) ) {
                 pBloqueLibre = pBloqueLibre->pNodoSig;
     }
-
+/* 
     if( pBloqueLibre->pNodoSig != NULL ) {
             //Se encontro un bloque que sirve para crear el nuevo bloque
-            iFnImprimir_usr("\nSe encontro un bloque de memoria libre de %d "
-                    "bytes", pBloqueLibre->pNodoSig->nTamanio);
-
-            return (void *) pBloqueLibre;
+            iFnImprimir_usr("\npvBuscar...: Se encontro un bloque de memoria "
+                    "libre de %d bytes", pBloqueLibre->pNodoSig->nTamanio);
+    } else {
+            //NO se encontro un bloque
+            iFnImprimir_usr("\npvBuscar...: NO se encontro un bloque de memoria"
+                    " libre de tamano suficiente");
     }
+*/
+    return (void *) pBloqueLibre;
+}
 
-    return NULL;
+
+/**
+ * @brief Agranda el Heap, agrandando el segmento de datos
+ * @param Tamanio a adicionar al Heap
+ * @param Puntero a puntero para devolver el Fin de Heap Anterior
+ * @param Puntero a puntero para devolver el Fin de Heap Nuevo
+ * @return 0 si resulto con exito, distinto de 0 si hubo error
+ * @date 28-09-2008
+ */
+int iFnAgrandarHeap( int iTamanio, char** ppcFinHeapAnterior,
+                                   char** ppcFinHeapNuevo ) {
+    char * pcAux;
+    
+    //TODO - Reenplazar cuando exista sbrk()
+//  pcAux = (char*) sbrk( iTamanio );
+    pcAux = (char*) (16 * 1024);        //16K
+
+    if( (int)pcAux == (-1) ) {
+        //El SO no nos da mas memoria
+        iFnImprimir_usr("iFnAgrandarHeap: El S.O. NO permitio agrandar el "
+                "segmento.");
+        return -1;
+    }
+    *ppcFinHeapAnterior = pcAux;
+
+    //TODO - Reenplazar cuando exista sbrk()
+//  *ppcFinHeapNuevo = (char*) sbrk( 0 );   //Suponemos que un sbrk(0) no falla
+    *ppcFinHeapNuevo = (char*) ( 32 * 1024 );   //32K 
+
+    return 0;
+}
+
+
+/**
+ * @brief Muestra los bloques libres en el Heap
+ * @date 28-09-2008
+ */
+void vFnMostrarMemLibreHeap()
+{
+    t_nodo *pNodoActual;
+    int nIndice = 1;
+
+    iFnImprimir_usr("\n# Bloques de memoria libres en el Heap");
+    pNodoActual = &stuListaBloquesLibres;
+    while ((pNodoActual = pNodoActual->pNodoSig) != NULL) {
+        iFnImprimir_usr("\n#\tBloque %2d\tdir inic: %d\ttam = %6d bytes",
+                nIndice, (int)pNodoActual, pNodoActual->nTamanio);
+        nIndice++;
+    }
+    iFnImprimir_usr("\n\n");
 }
 

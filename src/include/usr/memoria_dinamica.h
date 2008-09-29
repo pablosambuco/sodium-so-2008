@@ -6,6 +6,10 @@
 #define __MEMORIA_DINAMICA_H
 
 
+#define HEAP_TAMANIO_INICAL 4000
+#define HEAP_INCREMENTO 4000
+
+
 /*!
  * \brief Tipo de datos para apuntar a un nodo libre
  */
@@ -31,5 +35,7 @@ void * malloc( unsigned int );
 void free( void * );
 void vFnInsertarBloqueLibreEnListaOrd( t_nodo * );
 void * pvFnBuscarNodoAnteriorMemoriaLibre( unsigned int );
+int iFnAgrandarHeap( int, char**, char** );
+void vFnMostrarMemLibreHeap();
 
 #endif
