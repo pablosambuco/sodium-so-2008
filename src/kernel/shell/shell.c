@@ -848,7 +848,7 @@ void vFnMenuInstanciarInit()
 	
     uiPosicion = iFnInstanciarInit();
 
-    //TODO - Revisar si esto es correcto
+    //TODO - lala Revisar si esto es correcto
     //Esperamos a Init, asi no queda zombie, y ademas, lFnSysWaitPid se encarga
     //de eliminar el segmento del proceso hijo, por lo que no perdemos memoria
     lRetorno = lFnSysWaitPid( pstuPCB[uiPosicion].ulId, &iStatus, 0 );
@@ -928,7 +928,7 @@ void vFnMenuVer()
 }
 
 
-//TODO lala - Actualizar segun las nuevas estrategias de asm. de memoria
+//TODO lala - Actualizar segun las nuevas estrategias de asig. de memoria
 /**
 \fn void vFnMenuMem()
 \brief  Muestra por pantalla información relevante a la memoria del Sistema
@@ -1008,7 +1008,8 @@ void vFnMenuMem()
 			iN++;
 		}
 		iN = 0;
-		while (iN < 30) {
+		/* TODO lala Arreglar
+        while (iN < 30) {
 			if (iMatrizMf[iN][0] != -1)	//Si el segmento está ocupado lo suma
 				uiMemoriaUsadaOverhead += (iMatrizMf[iN][1] - iMatrizMf[iN][0]);
 			else
@@ -1016,10 +1017,11 @@ void vFnMenuMem()
 			iN++;
 		}
 		iN = 0;
+        */
 
 		iTamanioMemoria     = uiMemoriaDisponible + uiMemoriaUsadaOverhead;
 		uiMemoriaPerdida    = uiMemoriaUsadaOverhead - uiMemoriaUsada;
-		uiMemoriaProceso    = iFnSegmentoMaximo();
+		uiMemoriaProceso    = 0; //TODO lala antes decia iFnSegmentoMaximo();
 
 		//Ya tenemos floats, dividimos para pasar a Kb o Mb
 
@@ -1692,7 +1694,7 @@ segmentos ocupados
 void vFnMenuSegs()
 {
 /* CHAU	vFnMostrarMemoriaSegmentada();*/
-    //TODO - Mostrar los segmentos ocupados, no solo los bloques libres
+    //TODO lala - Mostrar los segmentos ocupados, no solo los bloques libres
     vFnListarBloquesLibres();
 }
 
@@ -1995,7 +1997,7 @@ void vFnMenuExecSeg(int iComandoPos) {
     int iArg1;
     int iArg2;
     int indiceEnPcbs;
-    int iValorRetorno;
+    char * pcProceso;
 
     if ((iFnGetArg(iComandoPos, 1, stArg1, 16) == 1) && 
         (iFnGetArg(iComandoPos, 2, stArg2, 16) == 1)) {
@@ -2007,20 +2009,20 @@ void vFnMenuExecSeg(int iComandoPos) {
             vFnImprimir("\n Parametro invalido: Por favor ingrese: "
                         "1 para lanzar un proceso de sistema o "
                         "2 para un proceso usuario");
-        } else if ((iArg2 <= 0) || (iArg2 > iFnSegmentoMaximo())) {
-            //TODO Cambiar limites ( Desde 1byte, Hasta MemDisponible )
-            //No hay memoria suficiente
+        } else if ((iArg2 <= 0)/* || (iArg2 > iFnSegmentoMaximo())*/) {
+            //TODO lala Cambiar limites ( Desde 1byte, Hasta MemDisponible )
+            //Tamanio invalido
             vFnImprimir("\n Tamanio de proceso invalido. "
-                        "Ingrese un valor entre [1 y %d]", iFnSegmentoMaximo());
+                        "Ingrese un valor superior.");
         } else {
-            //Hay memoria, se intenta crear el segmento
+            //Parametros correctos; se intenta crear el segmento
             vFnImprimir("\n Creando un segmento de memoria para un proceso de "
                         "%d bytes.", iArg2);
-            iValorRetorno = iFnMalloc(iArg2);
+            //TODO - Sacar el pvFnKMalloc (pertenece al kernel)
+            pcProceso = (char *) pvFnKMalloc( iArg2, MEM_DEFAULT );
 
-            if (iValorRetorno == -1) {
-                //No hay memoria para el segmento (el sistema es multiprocesado,
-                //puede que antes la memoria alcanzase y ahora no)
+            if (pcProceso == NULL) {
+                //No hay memoria para el segmento
                 vFnImprimir("\n No se pudo alojar el proceso. "
                             "Tamanio solicitado: %d", iArg2);
             } else {
@@ -2039,7 +2041,7 @@ void vFnMenuExecSeg(int iComandoPos) {
                     //Se pudo crear el proceso
                     pstuPCB[indiceEnPcbs].uiTamProc = iArg2;
                     pstuPCB[indiceEnPcbs].iPrioridad = iArg1;
-                    pstuPCB[indiceEnPcbs].uiDirBase = iValorRetorno;
+                    pstuPCB[indiceEnPcbs].uiDirBase = (unsigned int) pcProceso;
                     vFnImprimir("[OK]");
                 } else if (indiceEnPcbs ==-1) {
                     //No se pudo crear el proceso, limite de tareas alcanzado
@@ -2047,18 +2049,13 @@ void vFnMenuExecSeg(int iComandoPos) {
                                 "Limite = %d", CANTMAXPROCS);
 
                     //Se borra el segmento recien creado
-                    if (iFnFree(iValorRetorno) != -1) {
-                        vFnImprimir("\n Se ha liberado el segmento reservado");
-                    } else {
-                        vFnImprimir("\n No se ha podido liberar el segmento");
-                    }
+                    vFnKFree(pcProceso);
+                    vFnImprimir("\n Se ha liberado el segmento reservado");
                 }
             }
         }	
     } else {
-        vFnImprimir("\nError, argumento(s) incorrecto(s)."
-                    "\nForma de uso: "
-                    //TODO - Tamanio en bytes o Kbytes ???
+        vFnImprimir("\nError, argumento(s) incorrecto(s).\nForma de uso: "
                     "Cmd>exec [1 o 2] [tamanio en bytes del proceso]");
     }
 }
@@ -2078,34 +2075,23 @@ void vFnMenuKillSeg(int iComandoPos)
 	if ((iFnGetArg(iComandoPos, 1, stArg1, 16) == 1)) {
 		iPid = iFnCtoi(stArg1);
 		if ((iProcPos = iFnBuscaPosicionProc(iPid)) != -1) {
-			if ((iPid != 0) && (iPid != 1)
-			    && (pstuPCB[iProcPos].iEstado !=
-				PROC_ELIMINADO)) {
-				if (iFnFree
-				    (pstuPCB[iProcPos].uiDirBase) == -1)
-					vFnImprimir
-					    ("\nNo se pudo liberar la memoria");
-				else {
-					pstuPCB[iProcPos].iEstado =
-					    PROC_ELIMINADO;
-					vFnImprimir
-					    ("\n OK, PID=%d, POS=%d, ESTADO=%d",
-					     pstuPCB[iProcPos].
-					     ulId, iProcPos,
-					     pstuPCB[iProcPos].iEstado);
-				}
+			if ((iPid != 0) && (iPid != 1) &&
+                (pstuPCB[iProcPos].iEstado != PROC_ELIMINADO)) {
+                    vFnKFree( pstuPCB[iProcPos].uiDirBase );
+                    pstuPCB[iProcPos].iEstado = PROC_ELIMINADO;
+                    vFnImprimir("\n OK, PID=%d, POS=%d, ESTADO=%d",
+                                 pstuPCB[iProcPos].ulId, iProcPos,
+                                 pstuPCB[iProcPos].iEstado);
 			} else {
-				vFnImprimir
-				    ("\nno se puede matar al proceso %d",
-				     iPid);
+				vFnImprimir("\nno se puede matar al proceso %d", iPid);
 			}
 		} else {
-			vFnImprimir
-			    ("\nEl pid ingresado no corresponde a un abonado en servicio...");
+			vFnImprimir("\nEl pid ingresado no corresponde a un "
+                        "abonado en servicio...");
 		}
 	} else {
-		vFnImprimir
-		    ("\nError, argumento(s) incorrecto(s).\nForma de uso: Cmd>kill [pid]");
+		vFnImprimir("\nError, argumento(s) incorrecto(s)."
+                    "\nForma de uso: Cmd>kill [pid]");
 	}
 }
 

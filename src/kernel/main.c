@@ -33,7 +33,6 @@ dword pdwGDT;
 //Puntero a la IDT (Interrupt Descriptor Table)
 //stuIDT *pstuIdtIDT;
 
-int iFmf, iCmf, iMatrizMf[30][2];
 unsigned long ulMemoriaBase = MEM_BASE;
 unsigned long ulMemoriaTope = MEM_TOPE;
 
@@ -87,9 +86,10 @@ main ()
 
   if (uiModoMemoria == MODOPAGINADO)
     vFnIniciarMapaBits (ulMemoriaBase, ulMemoriaTope);	//Paginado
-  else
+/* TODO lala Revisar
+    else
     vFnParticionarMemoria ();	//Segmentado
-
+ */
   vFnImprimirOk (55);
 
   vFnImprimir ("\nIniciando GDT ...                           ");

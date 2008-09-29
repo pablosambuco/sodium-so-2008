@@ -56,7 +56,7 @@ void vFnIniciarKMem()
 
     InicioMemoriaAlta.nTamanio = 0;
     InicioMemoriaAlta.pNodoSig = (void *) INICIO_MEMORIA_ALTA;
-    //CHAU, YA NO, Reservamos TAMANIO_HEAP_KERNEL para Heap del Kernel
+    //lala CHAU, YA NO, Reservamos TAMANIO_HEAP_KERNEL para Heap del Kernel
     //((t_nodo *) InicioMemoriaAlta.pNodoSig)->nTamanio = TAMANIO_HEAP_KERNEL;
     ((t_nodo *) InicioMemoriaAlta.pNodoSig)->nTamanio = 
 	    uiTamanioMemoriaBios - (unsigned int) InicioMemoriaAlta.pNodoSig;
@@ -133,15 +133,14 @@ void *pvFnKMalloc(dword nTamanio, unsigned int uiOpciones)
 
 
 /*******************************************************************************
- Funcion: pvFnKFree
+ Funcion: vFnKFree
  Descripcion: Esta funcion libera el espacio de memoria reservado previamente
               por la funcion Malloc.
  Parametros:  void *pNodoOcupado, puntero a la direccin de memoria previamente
  	      	  reservada por la funcion Malloc.
- Valor devuelto: Puntero a null
- Ultima modificacion: 09/12/2004
+ Ultima modificacion: 29/09/2008
 *******************************************************************************/
-void* pvFnKFree(void *pNodoALiberar) {
+void vFnKFree(void *pNodoALiberar) {
     t_nodo *pNodoActual, *pUltimoNodo;
     
     //Situo el puntero al verdadero comienzo del bloque a liberar
@@ -193,7 +192,6 @@ void* pvFnKFree(void *pNodoALiberar) {
         //lista de bloques libres
         pUltimoNodo->pNodoSig = pNodoALiberar;
     }
-    return (void*) NULL;
 }
 
 

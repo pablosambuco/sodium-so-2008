@@ -26,7 +26,7 @@ typedef struct nodo
 typedef struct nodoOcupado 
 {
     dword nTamanio;
-    unsigned int uiOpciones;
+//    unsigned int uiOpciones;
 } t_nodoOcupado;
 
 
