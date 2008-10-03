@@ -27,6 +27,7 @@ void vFnInicializarMemoriaSegmentada() {
  * @returns La direccion del bloque libre o 0 si no se encontro ninguno
  * @date 08-02-2008
  */
+//TODO - SACAR! (?)
 void * pvFnReservarSegmento(unsigned int uiTamanioDeseado) {
     return pvFnKMalloc(uiTamanioDeseado, MEM_ALTA | MEM_USUARIO);
 }
@@ -37,6 +38,7 @@ void * pvFnReservarSegmento(unsigned int uiTamanioDeseado) {
  * @param Direccion de inicio del segmento
  * @param Tamanio del segmento (en bytes)
  */
+//TODO - SACAR! (?)
 void vFnLiberarSegmento( void * pInicioSegmento,
                          unsigned int uiTamanioSegmento ) {
     vFnKFree(pInicioSegmento);

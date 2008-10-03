@@ -41,7 +41,6 @@ unsigned long ulMemoriaTope = MEM_TOPE;
 int iFnProcShell ();
 int iFnSistema ();
 int iFnProceso1 ();
-int iFnProcReloj ();
 
 /******************************************************************************
 Funcion:
@@ -115,7 +114,7 @@ main ()
   vFnImprimirOk (55);
 	
   vFnImprimir ("\nIniciando Proceso Shell ...                 ");
-  iFnNuevaTarea (iFnProcShell, "PR_SHELL................");
+  iFnNuevaTareaEspecial (iFnProcShell, "PR_SHELL................");
   vFnImprimirOk (55);
   
   vFnImprimir ("\nIniciando Variables de Entorno ...       ");
@@ -134,7 +133,7 @@ main ()
   vFnInicializarReloj();
   vFnImprimirOk (55);
 
-  iFnNuevaTarea (vFnLoopReloj, "PR_Reloj............");
+  iFnNuevaTareaEspecial (vFnLoopReloj, "PR_Reloj............");
   vFnImprimir ("\nIniciando Proceso Reloj ...                 ");
   vFnImprimirOk (55);
 
@@ -158,91 +157,62 @@ main ()
 }
 
 
-/***************************************************************************
- Funcion: sistema
- Descripcion: Simula un proceso de sistema.
- Parametros: pid del proceso
- Valor devuelto: Ninguno
- Ultima modificacion: 21/09/2004
-***************************************************************************/
-
-
-int
-iFnSistema (int iPid)
-{
-/*  unsigned long int uliTiempoAlarma = uliClockTick + 200;
-
-  while (1)
-    {
-
-      if (uliClockTick > uliTiempoAlarma)
-	{
-	  uliTiempoAlarma = uliClockTick + 200;
-	}
+/**
+ * @brief Simula un proceso de sistema
+ * @param pid del proceso
+ * @date 21/09/2004
+ */
+int iFnSistema (int iPid) {
+    /*
+    unsigned long int uliTiempoAlarma = uliClockTick + 200;
+    
+    while (1) {
+        if (uliClockTick > uliTiempoAlarma)	{
+            uliTiempoAlarma = uliClockTick + 200;
+        }
     }
     */
-  while (1);
+    while (1);
 
-  return (1);
+    return (1);
 }
 
 
-/***************************************************************************
- Funcion: proceso1
- Descripcion: Simula un proceso del usuario.
- Parametros: pid del proceso
- Valor devuelto: Ninguno
- Ultima modificacion: 21/09/2004
-***************************************************************************/
-
-int
-iFnProceso1 (int iPid)
-{
-  unsigned long int uliTiempoAlarma = uliClockTick + 1;
-  unsigned long int uliNroBucles = 0;
-  int iPCB;
-
-  iPCB=iFnBuscaPosicionProc(iPid);
-  while (1)
-    {
-      if (uliClockTick > uliTiempoAlarma)
-	{
-	  uliTiempoAlarma = uliClockTick + 1; // Envia un mensaje a pantalla por cada clocktick 
-	  				      // transcurrido (generalmente son bastantes mas de 1, debido a la multitarea)
-	 
-	  vFnImprimirVentana (HWND_PROCESOS,
-			      "\ngetpid(): %d, getppid(): %d, %s. ClockTicks=%d, MBucles.Seg=%d (aprox)",
-			      lFnSysGetPid(), 
-			      lFnSysGetPPid(), 
-			      pstuPCB[iPCB].stNombre, 
-			      uliClockTick,
-			      (uliNroBucles * 18 + uliNroBucles / 10 * 2)/1000000);
-	  uliNroBucles = 0;
-	}
-      uliNroBucles++;      
+/**
+ * @brief Simula un proceso del usuario
+ * @param pid del proceso
+ * @date 21/09/2004
+ */
+int iFnProceso1 (int iPid) {
+    unsigned long int uliTiempoAlarma = uliClockTick + 1;
+    unsigned long int uliNroBucles = 0;
+    int iPCB;
+  
+    iPCB=iFnBuscaPosicionProc(iPid);
+    while (1) {
+        if (uliClockTick > uliTiempoAlarma)	{
+            /* Envia un mensaje a pantalla por cada clocktick transcurrido
+             * (generalmente son bastantes mas de 1, debido a la multitarea)
+             */
+            uliTiempoAlarma = uliClockTick + 1; 
+      
+            vFnImprimirVentana (HWND_PROCESOS,
+                    "\ngetpid(): %d, getppid(): %d, %s. ClockTicks=%d, "
+                    "MBucles.Seg=%d (aprox)",
+                    lFnSysGetPid(), 
+                    lFnSysGetPPid(), 
+                    pstuPCB[iPCB].stNombre, 
+                    uliClockTick,
+                    (uliNroBucles * 18 + uliNroBucles / 10 * 2)/1000000);
+      
+            uliNroBucles = 0;
+        }
+        uliNroBucles++;      
     }
   return (1);
 }
 
 
-
-/***************************************************************************
- Funcion: TareaNula
- Descripcion: Se ejecuta siempre ante la ausencia de otros procesos
-		listos para la ejecucion dentro del sistema.
- Parametros: Pid del proceso
- Valor devuelto: Ninguno
- Ultima modificacion: 09/04/2006
-***************************************************************************/
-/*
-void
-vFnTareaNula (int iPid)
-{
-  vFnImprimir ("\nTarea Nula, Pid=%d", iPid);
-  vFnImprimirPrompt ();
-  while (1);
-}
-*/ //antigua tarea nula, se mantiene por historia :D
 /***************************************************************************
  Funcion: prShell
  Descripcion: El shell corre como un proceso independiente. Ejecuta un

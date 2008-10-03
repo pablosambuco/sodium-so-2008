@@ -801,40 +801,36 @@ void vFnMenuVerShm()
 */
 void vFnMenuKill(int iComandoPos)
 {
-	char stArg1[16];
-	int iProcPos, iPid;
-	if ((iFnGetArg(iComandoPos, 1, stArg1, 16) == 1)) {
-		iPid = iFnCtoi(stArg1);
+    char stArg1[16];
+    int iProcPos, iPid;
 
-		if ((iProcPos = iFnBuscaPosicionProc(iPid)) != -1) {
-			if ((iPid != 0) && (iPid != 1)
-			    && (pstuPCB[iProcPos].iEstado !=
-				PROC_ELIMINADO)) {
-				pstuPCB[iProcPos].iEstado = PROC_ELIMINADO;
-				iFnLimpiarMemoria(pstuPCB
-						  [iProcPos].
-						  uiTamProc,
-						  pstuPCB
-						  [iProcPos].
-						  pstuTablaPaginacion);
-				vFnImprimir
-				    ("\n OK, PID=%d, POS=%d, ESTADO=%d",
-				     pstuPCB[iProcPos].ulId,
-				     iProcPos, pstuPCB[iProcPos].iEstado);
-			} else {
-				vFnImprimir
-				    ("\n No se puede matar al proceso %d",
-				     iPid);
-			}
-		} else {
-			vFnImprimir
-			    ("\nEl pid ingresado no corresponde a un abonado en servicio...");
-		}
-	} else {
-		vFnImprimir
-		    ("\nError, argumento(s) incorrecto(s).\nForma de uso: Cmd>kill [pid]");
-	}
+    if ((iFnGetArg(iComandoPos, 1, stArg1, 16) == 1)) {
+        iPid = iFnCtoi(stArg1);
+
+        if ((iProcPos = iFnBuscaPosicionProc(iPid)) != -1) {
+            if ((iPid != 0) &&  //No dejamos matar al IDLE
+                (iPid != 1) &&  //Ni al SHELL
+                (iPid != 2) &&  //Ni al RELOJ TODO: Dejar matar al reloj
+                (pstuPCB[iProcPos].iEstado != PROC_ELIMINADO)) {
+                    pstuPCB[iProcPos].iEstado = PROC_ELIMINADO;
+                    iFnLimpiarMemoria( pstuPCB[iProcPos].uiTamProc,
+                                       pstuPCB[iProcPos].pstuTablaPaginacion);
+                    vFnImprimir("\n OK, PID=%d, POS=%d, ESTADO=%d",
+                                pstuPCB[iProcPos].ulId,
+                                iProcPos, pstuPCB[iProcPos].iEstado);
+            } else {
+                vFnImprimir("\n No se puede matar al proceso %d",iPid);
+            }
+        } else {
+            vFnImprimir("\nEl pid ingresado no corresponde a un "
+                        "abonado en servicio...");
+        }
+    } else {
+        vFnImprimir("\nError, argumento(s) incorrecto(s).\nForma de uso: "
+                    "Cmd>kill [pid]");
+    }
 }
+
 
 /**
 \fn void vFnMenuInstanciarInit()
@@ -1776,13 +1772,13 @@ void vFnMenuExec(int iComandoPos)
 					switch (iArg1) {
 					case 1:
 						indiceEnPcbs =
-						    iFnNuevaTarea
+						    iFnNuevaTareaEspecial
 						    (iFnSistema,
 						     "PR_SISTEMA............");
 						break;
 					case 2:
 						indiceEnPcbs =
-						    iFnNuevaTarea
+						    iFnNuevaTareaEspecial
 						    (iFnProceso1,
 						     "PR_USUARIO............");
 						break;
@@ -1906,90 +1902,13 @@ void vFnMenuCheck(int iComandoPos)
 /**
 \fn void vFnMenuExecSeg(int iComandoPos)
 \brief Lanza un proceso de sistema o de usuario y le reserva la cantidad
- necesaria según el tamaño declarado por línea de
- comando. Si no hay espacio suficiente o no se pueden alocar más
- procesos lo indicará con un mensaje de error.
-\param iComandoPos Posición inicial del comando en el buffer de cCaracteres. 
-Con esta información se podrán recuperar los parámetros pasados desde la
- línea de comandos.
-\date 09/04/2006
-*/
-/*void vFnMenuExecSeg(int iComandoPos)
-{				//1
-	char stArg1[16];
-	char stArg2[16];
-	int iArg1 = 0;
-	int indiceEnPcbs = -1;
-	int iArg2 = 0;
-	int iValorRetorno;
-	if ((iFnGetArg(iComandoPos, 1, stArg1, 16) == 1)
-	    && (iFnGetArg(iComandoPos, 2, stArg2, 16) == 1)) {	//2
-		iArg1 = iFnCtoi(stArg1);
-		iArg2 = iFnCtoi(stArg2);	//tamanio en bytes del proceso.
-		if ((iArg2 <= 0) || (iArg2 > iFnSegmentoMaximo())) {
-			vFnImprimir
-			    ("\nTamanio de proceso invalido. Ingrese un valor entre [1 y %d]",
-			     iFnSegmentoMaximo());
-		} else {	//3
-			iValorRetorno = iFnMalloc(iArg2);
-			if (iValorRetorno == -1) {	//4
-				vFnImprimir
-				    ("\nNo se pudo alocar el proceso. Tamanio solocitado: %d",
-				     iArg2);
-			}	//4
-			else {	//5
-				vFnImprimir
-				    ("\n Asignando memoria para un proceso de %d Bytes.",
-				     iArg2);
-				vFnImprimir("\nIniciando Proceso...");
-				switch (iArg1) {	//6
-				case 1:
-					indiceEnPcbs =
-					    iFnNuevaTarea
-					    (iFnSistema,
-					     "PR_SISTEMA............");
-					break;
-				case 2:
-					indiceEnPcbs =
-					    iFnNuevaTarea
-					    (iFnProceso1,
-					     "PR_USUARIO............");
-					break;
-				default:
-					indiceEnPcbs = -2;
-					vFnImprimir
-					    ("\n Por favor ingrese 1 para lanzar un proceso de sistema o 2 para un proceso usuario");
-					break;
-				}	//6
-				if (indiceEnPcbs != -1) {	//5
-					pstuPCB[indiceEnPcbs].
-					    uiTamProc = iArg2;
-					pstuPCB[indiceEnPcbs].
-					    iPrioridad = iArg1;
-					pstuPCB[indiceEnPcbs].
-					    uiDirBase = iValorRetorno;
-					vFnImprimir("[OK]");
-				}	//5
-				else {
-					vFnImprimir
-					    ("\nEl sistema no acepta mas tareas, Limite = %d",
-					     CANTMAXPROCS);
-					if (iFnFree(iValorRetorno)
-					    != -1)
-						vFnImprimir
-						    ("\nSe ha liberado la memoria reservada previamente");
-					else
-						vFnImprimir
-						    ("\nNo se ha podido librerar la memoria asignada previamente");
-				}
-			}	//5
-		}		//3
-	}			//2
-	else {			//9
-		vFnImprimir
-		    ("\nError, argumento(s) incorrecto(s).\nForma de uso: Cmd>exec [1 o 2] [tamanio en Kb del proceso]");
-	}			//9
-}				//1
+ necesaria segun el tamano declarado por linea de comando. Si no hay espacio
+ suficiente o no se pueden alojar mas procesos lo indicara con un mensaje de
+ error.
+\param iComandoPos Posición inicial del comando en el buffer de cCaracteres. Con
+ esta información se podrán recuperar los parámetros pasados desde la linea de
+ comandos.
+\date 29/09/2008
 */
 void vFnMenuExecSeg(int iComandoPos) {
     char stArg1[16];
@@ -2030,18 +1949,28 @@ void vFnMenuExecSeg(int iComandoPos) {
                 vFnImprimir("\n Intentando iniciar Proceso...");
                 switch (iArg1) {
                     case 1:     //Proceso de sistema
-                        indiceEnPcbs=iFnNuevaTarea(iFnSistema,"PR_SISTEMA...");
+                        indiceEnPcbs=iFnNuevaTareaEspecial(
+                                                   iFnSistema,"PR_SISTEMA...");
                         break;
                     case 2:     //Proceso de usuario
-                        indiceEnPcbs=iFnNuevaTarea(iFnProceso1,"PR_USUARIO...");
+                        indiceEnPcbs=iFnNuevaTareaEspecial(
+                                                   iFnProceso1,"PR_USUARIO...");
                         break;
                 }
 
                 if (indiceEnPcbs >= 0) {
                     //Se pudo crear el proceso
+                    /* Asignamos Tamanio, Prioridad y Direccion Base en el PCB
+                     * del proceso creado.
+                     * La direccion base solo la usara el comando kill para
+                     * saber que bloque de memoria liberar con vFnKFree, ya que
+                     * los procesos creados con iFnNuevaTareaEspecial usan como
+                     * Stack parte de su TSS (espacio0, espacio1, etc).
+                     */
                     pstuPCB[indiceEnPcbs].uiTamProc = iArg2;
                     pstuPCB[indiceEnPcbs].iPrioridad = iArg1;
                     pstuPCB[indiceEnPcbs].uiDirBase = (unsigned int) pcProceso;
+
                     vFnImprimir("[OK]");
                 } else if (indiceEnPcbs ==-1) {
                     //No se pudo crear el proceso, limite de tareas alcanzado
@@ -2075,15 +2004,23 @@ void vFnMenuKillSeg(int iComandoPos)
 	if ((iFnGetArg(iComandoPos, 1, stArg1, 16) == 1)) {
 		iPid = iFnCtoi(stArg1);
 		if ((iProcPos = iFnBuscaPosicionProc(iPid)) != -1) {
-			if ((iPid != 0) && (iPid != 1) &&
+            if ((iPid != 0) &&  //No dejamos matar al IDLE
+                (iPid != 1) &&  //Ni al SHELL
+                (iPid != 2) &&  //Ni al RELOJ
                 (pstuPCB[iProcPos].iEstado != PROC_ELIMINADO)) {
+                    //Liberamos el segmento que usa el proceso
+                    /* En realidad, lo unico que se esta eliminando aqui es el
+                     * bloque de memoria que se creo con el comando exec, ya
+                     * que los procesos creados con iFnNuevaTareaEspecial usan
+                     * como Stack parte de su TSS (espacio0, espacio1, etc).
+                     */
                     vFnKFree( pstuPCB[iProcPos].uiDirBase );
                     pstuPCB[iProcPos].iEstado = PROC_ELIMINADO;
                     vFnImprimir("\n OK, PID=%d, POS=%d, ESTADO=%d",
                                  pstuPCB[iProcPos].ulId, iProcPos,
                                  pstuPCB[iProcPos].iEstado);
 			} else {
-				vFnImprimir("\nno se puede matar al proceso %d", iPid);
+				vFnImprimir("\nNo se puede matar al proceso %d", iPid);
 			}
 		} else {
 			vFnImprimir("\nEl pid ingresado no corresponde a un "

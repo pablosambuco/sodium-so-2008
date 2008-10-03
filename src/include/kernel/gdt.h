@@ -1,5 +1,6 @@
-/* \file kernel/gdt.h
-*  \brief Funciones de biblioteca, constantes y variables para el manejo de la GDT
+/**
+\file kernel/gdt.h
+\brief Funciones de biblioteca, constantes y variables para el manejo de la GDT
 */
 #ifndef GDT_H
 #define GDT_H
@@ -132,10 +133,26 @@ typedef struct {
 }stuTSS;
   
 void vFnGdtInicializar(dword);
-int iFnBuscaPosicionProc (unsigned long ulPid);
-int iFnNuevaTarea(void *, char*);
+
+int iFnBuscaPosicionProc(unsigned long);
+unsigned int uiFnSetearBaseLimiteDescriptor(int,unsigned int,unsigned int);
+
+unsigned int iFnAgregarDescriptorGDT(unsigned int,unsigned int,unsigned int,int);
+
+int iFnBuscarPCBLibre();
+unsigned int uiFnBuscarEntradaGDTLibre();
+
+int iFnCrearTSSTareaEspecial (void*,int,unsigned int,unsigned int,unsigned int);
+int iFnCrearTSS (void*,void*,int,unsigned int,unsigned int,unsigned int);
+
+int iFnCrearPCB(int,void*,char*,unsigned int,unsigned int,unsigned int,unsigned int,unsigned int,unsigned int );
+
+int iFnNuevaTareaEspecial(void *, char*);
 int iFnInstanciarIdle();
 int iFnInstanciarInit();
+
+int iFnCrearProceso();
+
 int iFnDuplicarProceso(unsigned int uiProcPadre); /*!< devuelve el indice de PCB/TSS del proceso nuevo */
 int iFnEliminarProceso(unsigned int uiProcesp); /*!< elimina todos los recursos usados por el proceso */
 int iFnReemplazarProceso( unsigned int uiProceso, unsigned char *__codigo, unsigned int size );

@@ -19,7 +19,7 @@ fi
 
 if (test $2);
 	then
-    	find . -iname '*.'$2 -print | xargs grep -n -T -C 1 --color=auto --exclude-dir=.svn --exclude=tags -I -r $insensitive -e $1 /dev/null
+    	find . -iname '*.'$2 -print | xargs grep -n -T -C 1 --color=auto --exclude-dir=.svn --exclude-dir=docs --exclude=tags -I -r $insensitive -e $1 /dev/null
 	else
-    	grep -n -T -C 1 --color=auto --exclude-dir=.svn --exclude=tags -I -r $insensitive -e $1 *
+    	grep -n -T -C 1 --color=auto --exclude-dir=.svn --exclude-dir=docs --exclude=tags -I -r $insensitive -e $1 *
 fi

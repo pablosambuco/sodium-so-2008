@@ -251,20 +251,21 @@ long lFnSysGetPid()
 {
 	return pstuPCB[ulProcActual].ulId;
 }
-/******************************************************************************
-Funcion:
-Descripcion:
-Recibe:   
-Devuelve: 
-*******************************************************************************/
+
+
+/**
+ * \brief Envia una senal a un proceso
+ * \param pid Pid del proceso
+ * \param sig Numero de senal
+ * \returns 0 si se completo con exito, < 0 si ocurrio un error
+ */
 long lFnSysKill(int pid, int sig)
 {
 	int iPosicionPCB = iFnBuscaPosicionProc(pid), iPCBPadre = 0;
 
 	/* si no encontramos el proceso por PID, devolvemos ESRCH
 	 * (requerido por POSIX) */
-	if (iPosicionPCB < 0
-	    || pstuPCB[iPosicionPCB].iEstado == PROC_ZOMBIE) {
+	if (iPosicionPCB < 0 || pstuPCB[iPosicionPCB].iEstado == PROC_ZOMBIE) {
 		return -ESRCH;
 	}
 
@@ -277,12 +278,11 @@ long lFnSysKill(int pid, int sig)
 	case (SIGTERM):
 	case (SIGKILL):
 		/* buscamos al padre para despertarlo, de ser necesario */
-		iPCBPadre =
-		    iFnBuscaPosicionProc(pstuPCB[iPosicionPCB].ulParentId);
+		iPCBPadre = iFnBuscaPosicionProc(pstuPCB[iPosicionPCB].ulParentId);
 		/* forzamos la salida del proceso, dejandolo en estado zombie, y 
 		 * almacenando -1 como valor de salida (valor arbitrario, deberian
 		 * implementarse las macros que separan valores de salida del estado
-		 * de salida forzado por señal) */
+		 * de salida forzado por senal) */
 		pstuPCB[iPosicionPCB].iEstado = PROC_ZOMBIE;
 		pstuPCB[iPosicionPCB].iExitStatus = -1;
 		/* despertamos al padre, si estaba esperando */
@@ -300,8 +300,9 @@ long lFnSysKill(int pid, int sig)
 		}
 		break;
 	case (SIGCONT):
-		if (pstuPCB[iPosicionPCB].iEstado == PROC_DETENIDO)
+		if (pstuPCB[iPosicionPCB].iEstado == PROC_DETENIDO) {
 			pstuPCB[iPosicionPCB].iEstado = PROC_LISTO;
+        }
 		break;
 	default:
 		return -EINVAL;
@@ -309,6 +310,8 @@ long lFnSysKill(int pid, int sig)
 
 	return 0;
 }
+
+
 /******************************************************************************
 Funcion:
 Descripcion:
@@ -872,39 +875,42 @@ Descripcion:
 Recibe:   
 Devuelve: 
 *******************************************************************************/
-long lFnSysIdle()
-{
-  unsigned int uiVectorDescriptorAuxiliarTarea[2];
+long lFnSysIdle() {
+    unsigned int uiVectorDescriptorAuxiliarTarea[2];
+    
+    vFnImprimirContextSwitch (ROJO, pstuPCB[iTareaNula].ulId,
+            pstuPCB[iTareaNula].stNombre,
+            pstuPCB[iTareaNula].uiIndiceGDT_TSS);
+  
+    if (pstuPCB[staiN].iEstado != PROC_ELIMINADO &&
+            pstuPCB[staiN].iEstado != PROC_ZOMBIE &&
+            pstuPCB[staiN].iEstado != PROC_ESPERANDO &&
+            pstuPCB[staiN].iEstado != PROC_DETENIDO) {
+                  //paso el proceso que estaba en ejecucion a listo
+                  pstuPCB[staiN].iEstado = PROC_LISTO;
+    }
 
-  vFnImprimirContextSwitch (ROJO, pstuPCB[iTareaNula].ulId,
-					pstuPCB[iTareaNula].stNombre,
-					pstuPCB[iTareaNula].uiIndiceGDT_TSS);
+    //Paso el IDLE a running
+    pstuPCB[iTareaNula].iEstado = PROC_EJECUTANDO;
+	
+    staiProcesoAnterior = staiN;
+    ulProcActual = iTareaNula;
 
-  if (pstuPCB[staiN].iEstado != PROC_ELIMINADO
-		  && pstuPCB[staiN].iEstado != PROC_ZOMBIE
-		  && pstuPCB[staiN].iEstado != PROC_ESPERANDO
-		  && pstuPCB[staiN].iEstado != PROC_DETENIDO)
-		pstuPCB[staiN].iEstado = PROC_LISTO;	//paso el proceso que estaba en ejecuci�n a listo                
-	      
-		  pstuPCB[iTareaNula].iEstado = PROC_EJECUTANDO;	//paso al actual de listo a running
-		
-  		  staiProcesoAnterior = staiN;
-	      ulProcActual = iTareaNula;
+    /* uiVectorDescriptorAuxiliarTarea[0] = offset.
+     * Este parametro no hace falta cargarlo porque es ingnorado al momento del
+     * salto a un descriptor, lo unico que interesa el el selector en si mismo.
+     */
 
-	      /* uiVectorDescriptorAuxiliarTarea[0] = offset. Este par�metro no hace falta 
-	         cargarlo porque es ingnorado al momento del salto a 
-	         un descriptor, lo �nico que interesa el el selector 
-	         en s� mismo */
+    /* Multiplicamos el indice por 8 para tener el offset en bytes desde el
+     * inicio de la gdt hasta el selector que nos interesa */
+    uiVectorDescriptorAuxiliarTarea[1]= pstuPCB[iTareaNula].uiIndiceGDT_TSS * 8;
 
-	      uiVectorDescriptorAuxiliarTarea[1] = pstuPCB[iTareaNula].uiIndiceGDT_TSS * 8;	/* multiplicamos el indice por 
-											   8 para tener el offset en bytes 
-											   desde el inicio de la gdt hasta 
-											   el selector que nos interesa */
+    asm ("clts\t\n" "ljmp *%0": :"m" (*uiVectorDescriptorAuxiliarTarea));
 
-	    asm ("clts\t\n" "ljmp *%0": :"m" (*uiVectorDescriptorAuxiliarTarea));
-
-	return 0;
+    return 0;
 }
+
+
 /******************************************************************************
 Funcion:
 Descripcion:
