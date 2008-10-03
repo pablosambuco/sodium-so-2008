@@ -1295,11 +1295,19 @@ void vFnMenuStack(iComandoPos)
 
 					switch (iRing) {
 					case 3:
-						pdwVolcado = (unsigned int *) pstuPCB[iPCB].uiDirBase + stuTSSTablaTareas[iTSS].esp;
-						iCantidadDWordsStack = pstuPCB[iPCB].uiLimite - stuTSSTablaTareas[iTSS].esp;
+						pdwVolcado = (unsigned int *) pstuPCB[iPCB].uiDirBase +
+                            stuTSSTablaTareas[iTSS].esp;
+                        //TODO - Revisar cambio:
+                        //pstuPCB.uiLimite no corresponde a la direccion
+                        //absoluta de limite, sino a la LONGITUD del segmento
+						//iCantidadDWordsStack = pstuPCB[iPCB].uiLimite -
+                        //    stuTSSTablaTareas[iTSS].esp;
+						iCantidadDWordsStack = (pstuPCB[iPCB].uiLimite +
+                                                pstuPCB[iPCB].uiDirBase  ) -
+                                                stuTSSTablaTareas[iTSS].esp;
 						vFnImprimir
-				    		("\nValores calculados: Dir. inicial volcado=0x%x, Cant.Words=%d",
-							pdwVolcado, iCantidadDWordsStack); 
+				    		("\nValores calculados: Dir. inicial volcado=0x%x, "
+                             "Cant.Words=%d",pdwVolcado, iCantidadDWordsStack); 
 						break;
 					default:
 						vFnImprimir("\nSeleccion no valida: RING=%d",iRing);
@@ -1966,6 +1974,10 @@ void vFnMenuExecSeg(int iComandoPos) {
                      * saber que bloque de memoria liberar con vFnKFree, ya que
                      * los procesos creados con iFnNuevaTareaEspecial usan como
                      * Stack parte de su TSS (espacio0, espacio1, etc).
+                     */
+                    /* Se asigna manualmente uiTamProc, ya que por ser
+                     * TAREA_ESPECIAL, iFnCrearPCB lo calcula 'mal' (toma el
+                     * valor del tamano del segmento, el cual es 4Gb)
                      */
                     pstuPCB[indiceEnPcbs].uiTamProc = iArg2;
                     pstuPCB[indiceEnPcbs].iPrioridad = iArg1;

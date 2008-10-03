@@ -34,8 +34,8 @@ typedef struct _stuPCB_{
   char stNombre[25];
   unsigned int uiTamProc;
   struct stuTablaPagina * pstuTablaPaginacion;
-  unsigned int uiDirBase,
-	       uiLimite;
+  unsigned int uiDirBase,   /*!< direccion base de memoria (absoluta) */
+	       uiLimite;        /*!< LONGITUD de memoria (NO existe granularidad) */
   stuMemoriasAtachadas memoriasAtachadas[MAXSHMEMPORPROCESO];
 
   //agregado
