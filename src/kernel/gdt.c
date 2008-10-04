@@ -591,8 +591,7 @@ int iFnCrearProceso(void* pvInicioBinario,
 
     //Se reserva la memoria para el proceso (se usa un unico segmento para
     //Codigo y Datos)
-
-
+    uiBaseSegmento = (unsigned int) pvFnReservarSegmento( SEGMENT_SIZE );
     
     if( uiBaseSegmento == NULL ) {
         return -ENOMEM;
