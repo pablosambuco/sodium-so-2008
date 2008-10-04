@@ -137,42 +137,54 @@ void *pvFnKRealloc( void *pBloqueAModificar,
                     unsigned int uiNuevoTamanio,
                     unsigned int uiOpciones) {
 
-    t_nodoOcupado * pInicioRealBloque;
+    void * pNuevoBloque;
     unsigned int uiTamanioOriginal;
 
-    // Caso trivial 1, pBloqueAModificar == NULL; hacemos malloc
+    // 1 Caso trivial, pBloqueAModificar == NULL; hacemos malloc
     if( pBloqueAModificar == NULL ) {
         return pvFnKMalloc(uiNuevoTamanio, uiOpciones);
     }
 
-    // Caso trivial 2, uiNuevoTamanio == 0; hacemos free
+    // 2 Caso trivial, uiNuevoTamanio == 0; hacemos free
     if( uiNuevoTamanio == 0) {
         vFnKFree(pBloqueAModificar);
         return NULL;
     }
 
-    pInicioRealBloque = ((void *) pBloqueAModificar) - sizeof(t_nodoOcupado);
-    uiTamanioOriginal = pInicioRealBloque->nTamanio;
+    uiTamanioOriginal =
+        ( (t_nodoOcupado*)
+          ( (char*)pBloqueAModificar - sizeof(t_nodoOcupado) )) -> nTamanio;
 
-    // Caso trivial 3, uiNuevoTamanio == uiTamanioOriginal; no hacemos nada
-    if( uiNuevoTamanio == uiTamanioOriginal) {
+    // 4 Hay que achicar (o dejar igual) el bloque
+    // Decidimos no hacerlo, para evita fragmentacion (si linux lo hace...)
+    if( uiNuevoTamanio <= uiTamanioOriginal) {
         return pBloqueAModificar;
     }
 
-    //Caso sencillo: debemos achicar el bloque ocupado y crear un bloque libre
-    //(y achicando el bloque original queda espacio suficiente para el libre)
-    if( uiNuevoTamanio <= uiTamanioOriginal &&
-        uiTamanioOriginal - uiNuevoTamanio >= sizeof(t_nodo) ) {
+    // 5 Hay que agrandar bloque
+    pNuevoBloque = pvFnKMalloc( uiNuevoTamanio, uiOpciones );
+    if( pNuevoBloque == NULL ) {
+        //errno = ENOMEM;
+        return NULL;
     }
 
+    //Se copian N datos (N = el menor entre uiTamanioOriginal y uiNuevoTamanio)
+    if( uiNuevoTamanio > uiTamanioOriginal ) {
+        ucpFnCopiarMemoria(
+                (unsigned char *) pNuevoBloque,
+                (unsigned char *) pBloqueAModificar,
+                uiTamanioOriginal );
+    } else {
+        ucpFnCopiarMemoria(
+                (unsigned char *) pNuevoBloque,
+                (unsigned char *) pBloqueAModificar,
+                uiNuevoTamanio );
+    }
 
+    vFnKFree( pBloqueAModificar );
 
-    return pBloqueAModificar;
+    return pNuevoBloque;
 }
-
-
-
-
 
 
 /**
