@@ -31,12 +31,12 @@ typedef struct nodoOcupado
 
 
 
-void * malloc( unsigned int );
-void * realloc( void *, unsigned int );
-void free( void * );
+void vFnInicializarHeap();
+
+void * pvFnKMalloc( unsigned int );
+void vFnKFree( void * );
 void vFnInsertarBloqueLibreEnListaOrd( t_nodo * );
 void * pvFnBuscarNodoAnteriorMemoriaLibre( unsigned int );
-int iFnAgrandarHeap( int, char**, char** );
 void vFnMostrarMemLibreHeap();
 
 #endif

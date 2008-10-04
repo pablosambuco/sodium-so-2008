@@ -8,18 +8,13 @@ extern unsigned int uiTamanioMemoriaBaja;
 extern unsigned int uiTamanioMemoriaBios;
 
 
-/***************************************************************************
- Funcion: vFnIniciarKMem
- Descripcion: Esta funcion inicializa la tabla de bloques libres del kernel
- Parametros: Ninguno
- Valor devuelto: Ninguno
- Ultima modificacion: 09/12/2004
-***************************************************************************/
+/**
+\brief Inicializa la tabla de bloques libres del kernel
+\date 09/12/2004
+*/
 void vFnIniciarKMem()
 {
-//TODO - Actualizar el footprint para que refleje los cambios hechos, a saber:
-// - El Limite para el HEAP del Kernel
-// - Los segmentos libres para procesos nuevos
+//TODO lala - Actualizar el footprint para que refleje los cambios hechos:
 /* 
  * El footprint del sodium en memoria es similar al siguiente:
  * USO DE MEMORIA DESDE 0x0:
@@ -56,8 +51,6 @@ void vFnIniciarKMem()
 
     InicioMemoriaAlta.nTamanio = 0;
     InicioMemoriaAlta.pNodoSig = (void *) INICIO_MEMORIA_ALTA;
-    //lala CHAU, YA NO, Reservamos TAMANIO_HEAP_KERNEL para Heap del Kernel
-    //((t_nodo *) InicioMemoriaAlta.pNodoSig)->nTamanio = TAMANIO_HEAP_KERNEL;
     ((t_nodo *) InicioMemoriaAlta.pNodoSig)->nTamanio = 
 	    uiTamanioMemoriaBios - (unsigned int) InicioMemoriaAlta.pNodoSig;
 	((t_nodo *) InicioMemoriaAlta.pNodoSig)->pNodoSig = NULL;
@@ -65,15 +58,13 @@ void vFnIniciarKMem()
 }
 
 
-/*****************************************************************************
- Funcion: pvFnKMalloc
- Descripcion:    Reserva memoria dinamicamente.
- Parametros:     dword nTamanio, indica la cantidad de bytes de memoria que
- 				 deseo reservar
- Valor devuelto: Puntero a void que indica el comienzo del bloque de memoria
- 		 reservada. En caso de no poder asignar la memoria devuelve NULL
- Ultima Modificacion: 09/12/2004
-*****************************************************************************/
+/**
+\brief Reserva memoria dinamicamente
+\param nTamanio Indica la cantidad de bytes de memoria que deseo reservar
+\param uiOpciones Flags de control
+\returns Puntero a void que indica el comienzo del bloque de memoria reservada. En caso de no poder asignar la memoria devuelve NULL
+\date 02/10/2008
+*/
 void *pvFnKMalloc(dword nTamanio, unsigned int uiOpciones)
 {
 	t_nodo *pNodoActual, *pUltimoNodo;
@@ -91,11 +82,6 @@ void *pvFnKMalloc(dword nTamanio, unsigned int uiOpciones)
         // Memoria Baja
         pUltimoNodo = &InicioMemoriaKernel;
     }
-
-    //TODO - Poner este comentario donde corresponda
-    /* El tipo de memoria KERNEL/USUARIO se usa para saber si el bloque de
-     * memoria se puede reubicar
-     */
 
 	while ((pNodoActual = pUltimoNodo->pNodoSig) != NULL) {
         /* En esta implementacin, los nodos de la lista dinamica de bloques
@@ -116,8 +102,11 @@ void *pvFnKMalloc(dword nTamanio, unsigned int uiOpciones)
             //El bloque se reserva al FINAL del bloque libre existente
 			pNodoOcupado = (t_nodoOcupado *) ((byte *) pNodoActual + nResto);
 
-			//Indico el tamanio del bloque asignado
+			//Indico el tamanio del bloque asignado (incluye encabezado)
 			pNodoOcupado->nTamanio = nTamanio + sizeof(t_nodoOcupado);
+
+            // El tipo de memoria KERNEL/USUARIO se usa para saber si el bloque 
+            // de memoria se puede reubicar
 			pNodoOcupado->uiOpciones = GET_MEM_KERNEL_USUARIO(uiOpciones);
 			
 			vFnLog("\npvFnKMalloc: Asignando %dKb en el Heap del Kernel",
@@ -132,14 +121,65 @@ void *pvFnKMalloc(dword nTamanio, unsigned int uiOpciones)
 }
 
 
-/*******************************************************************************
- Funcion: vFnKFree
- Descripcion: Esta funcion libera el espacio de memoria reservado previamente
-              por la funcion Malloc.
- Parametros:  void *pNodoOcupado, puntero a la direccin de memoria previamente
- 	      	  reservada por la funcion Malloc.
- Ultima modificacion: 29/09/2008
-*******************************************************************************/
+
+
+
+
+/**
+\brief Modifica un bloque de memoria reservado dinamicamente
+\param pBloqueAModificar Puntero al bloque de memoria a modificar
+\param uiNuevoTamanio Cantidad de bytes de memoria que deseo reservar
+\param uiOpciones Flags de control
+\returns Puntero a void que indica el comienzo del bloque de memoria reservada. En caso de no poder asignar la memoria devuelve NULL
+\date 02/10/2008
+*/
+void *pvFnKRealloc( void *pBloqueAModificar,
+                    unsigned int uiNuevoTamanio,
+                    unsigned int uiOpciones) {
+
+    t_nodoOcupado * pInicioRealBloque;
+    unsigned int uiTamanioOriginal;
+
+    // Caso trivial 1, pBloqueAModificar == NULL; hacemos malloc
+    if( pBloqueAModificar == NULL ) {
+        return pvFnKMalloc(uiNuevoTamanio, uiOpciones);
+    }
+
+    // Caso trivial 2, uiNuevoTamanio == 0; hacemos free
+    if( uiNuevoTamanio == 0) {
+        vFnKFree(pBloqueAModificar);
+        return NULL;
+    }
+
+    pInicioRealBloque = ((void *) pBloqueAModificar) - sizeof(t_nodoOcupado);
+    uiTamanioOriginal = pInicioRealBloque->nTamanio;
+
+    // Caso trivial 3, uiNuevoTamanio == uiTamanioOriginal; no hacemos nada
+    if( uiNuevoTamanio == uiTamanioOriginal) {
+        return pBloqueAModificar;
+    }
+
+    //Caso sencillo: debemos achicar el bloque ocupado y crear un bloque libre
+    //(y achicando el bloque original queda espacio suficiente para el libre)
+    if( uiNuevoTamanio <= uiTamanioOriginal &&
+        uiTamanioOriginal - uiNuevoTamanio >= sizeof(t_nodo) ) {
+    }
+
+
+
+    return pBloqueAModificar;
+}
+
+
+
+
+
+
+/**
+\brief Libera el espacio de memoria reservado previamente con pvFnKMalloc
+\param pNodoOcupado, puntero a la direccin de memoria previamente reservada con pvFnKMalloc
+\date 29/09/2008
+*/
 void vFnKFree(void *pNodoALiberar) {
     t_nodo *pNodoActual, *pUltimoNodo;
     
@@ -195,14 +235,10 @@ void vFnKFree(void *pNodoALiberar) {
 }
 
 
-/***************************************************************************
- Funcion: MostrarLista
- Descripcion: Recorre la lista dinamica de bloques libres listandolos en
- 	      pantalla.
- Parametros: Ninguno
- Valor devuelto: Ninguno
- Ultima modificacion: 09/12/2004
-***************************************************************************/
+/**
+\brief Muestra en pantalla la lista dinamica de bloques libres
+\date 09/12/2004
+*/
 void vFnListarKMem()
 {
 	t_nodo *pNodoActual;

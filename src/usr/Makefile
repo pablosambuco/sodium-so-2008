@@ -21,6 +21,7 @@ OBJETOS_USR:= reloj.o \
 OBJETOS_LIBSODIUM:= sodstdio.o \
                     sodstdlib.o \
                     sodstdlib_asm.o \
+					sodstring.o \
 					memoria_dinamica.o
 
 all:	$(OBJETOS_USR)  
@@ -117,16 +118,3 @@ p1.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
 p1.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
 p1.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
 p1.o: ../include/kernel/definiciones.h ../include/usr/memoria_dinamica.h
-../include/usr/libsodium.o: ../include/kernel/syscall.h
-../include/usr/libsodium.o: ../include/kernel/signal.h
-../include/usr/libsodium.o: ../include/kernel/semaforo.h
-../include/usr/libsodium.o: ../include/kernel/shm.h
-../include/usr/libsodium.o: ../include/kernel/tiempo.h
-../include/usr/libsodium.o: ../include/kernel/definiciones.h
-../include/usr/libsodium.o: ../include/usr/memoria_dinamica.h
-../include/kernel/syscall.o: ../include/kernel/signal.h
-../include/kernel/syscall.o: ../include/kernel/semaforo.h
-../include/kernel/syscall.o: ../include/kernel/shm.h
-../include/kernel/syscall.o: ../include/kernel/tiempo.h
-../include/kernel/syscall.o: ../include/kernel/definiciones.h
-../include/kernel/tiempo.o: ../include/kernel/definiciones.h

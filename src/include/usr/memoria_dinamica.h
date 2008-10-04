@@ -32,6 +32,7 @@ typedef struct nodoOcupado
 
 
 void * malloc( unsigned int );
+void * realloc( void *, unsigned int );
 void free( void * );
 void vFnInsertarBloqueLibreEnListaOrd( t_nodo * );
 void * pvFnBuscarNodoAnteriorMemoriaLibre( unsigned int );

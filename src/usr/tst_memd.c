@@ -10,6 +10,8 @@ int main(){
     pvPuntero2 = malloc( 200 );
     pvPuntero3 = malloc( 300 );
 
+    pvPuntero1 = realloc( pvPuntero1, 450 );
+
     free( pvPuntero2 );
     free( pvPuntero1 );
     free( pvPuntero3 );

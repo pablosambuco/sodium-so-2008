@@ -37,25 +37,24 @@ typedef struct nodoOcupado
 } t_nodoOcupado;
 
 
-extern t_nodo InicioMemoria; /*!< Variable global utilizada para indicar el comienzo 
-                                  de la memoria a asignar*/
-/*!
- * \brief Funcion para la alocacion dinamica de memoria
- */
-void *pvFnKMalloc(dword nTamanio, unsigned int uiOpciones);
-/*!
- * \brief Funcion para la liberacion de memoria dinamica
- */
-void vFnKFree(void * pvBloqueMemoria); 
 
 void vFnIniciarKMem();
+
+void *pvFnKMalloc(dword, unsigned int);
+void *pvFnKRealloc(void *, unsigned int, unsigned int);
+void vFnKFree(void *); 
+
 void vFnListarKMem();
 
-t_nodo InicioMemoriaKernel; /*!< Esta estructura contiene un puntero a la direccion de 
-memoria desde donde sera posible asignar memoria baja para el kernel.*/
 
-t_nodo InicioMemoriaAlta; /*!< Esta estructura contiene un puntero a la direccion de 
-memoria desde donde sera posible asignar memoria alta para el kernel, a otros procesos.*/
+t_nodo InicioMemoriaKernel; /*!< Esta estructura contiene un puntero a la
+                              direccion de memoria desde donde sera posible
+                              asignar memoria baja para el kernel.*/
+
+t_nodo InicioMemoriaAlta;   /*!< Esta estructura contiene un puntero a la
+                              direccion de memoria desde donde sera posible
+                              asignar memoria alta para el kernel, a otros
+                              procesos.*/
 
 #endif //_MEMORIA_K_H_
 
