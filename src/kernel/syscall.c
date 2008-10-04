@@ -1174,3 +1174,20 @@ long lFnSysPtrace( int iRequest, void *pvDirParam ) {
 
 // ***************************************************************************
 
+unsigned long ulFnSysBrk(unsigned long ulBrk) {
+	
+	unsigned long ulPid = pstuPCB[ulProcActual].ulId;
+
+  //Si recibimos NULL como parametro, devolvemos el limite actual
+  if(ulBrk == NULL) {
+    return pstuPCB[ulProcActual].uiLimite;
+  }
+  
+  //Intenta realocar, y si hay error devuelve NULL
+  if(iFnRealocarProceso(ulPid,ulBrk) == -1) {
+    return NULL;
+  }
+
+  //Se realoco, devolvemos el nuevo limite
+  return pstuPCB[ulProcActual].uiLimite;
+}

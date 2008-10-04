@@ -76,6 +76,10 @@
 /*numeros de syscalls de ptrace, propias de sodium */
 #define __NR_ptrace       26
 
+/*numeros de syscalls de brk*/
+#define __NR_brk          45
+
+
 /*@}*/
 /*!< <!--fin de grupo de doxygen syscallNum --> */
 
@@ -226,5 +230,13 @@ long lFnSysNanosleep(timespec const *pcntimespecRequested_time, timespec *ptimes
 // TP 3 - 2007 - Syscalls de ptrace
 long lFnSysPtrace( int request, void *pvDirParam );
 /*@}*/
+
+/*
+ * TP 2 - 2008 - Syscalls de Memoria Dinamica   
+ */
+unsigned long ulFnSysBrk(unsigned long brk);
+
+
+
 
 #endif

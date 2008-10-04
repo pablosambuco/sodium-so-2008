@@ -572,3 +572,16 @@ int ptrace( int iRequest, int iPid, void *pvAddr, void *pvData ){
 
 	return liRetorno;
 }
+
+/******************************************************************************
+Funcion:
+Descripcion:
+Recibe:   
+Devuelve: 
+*******************************************************************************/
+unsigned long __brk (unsigned long limite)
+{
+	long liRetorno;
+	SYS_CALL_1( liRetorno, errno, __NR_brk, limite);
+	return liRetorno;
+}

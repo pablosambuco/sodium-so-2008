@@ -76,10 +76,11 @@ int sched_rr_get_interval();
 
 /* SysCall ptrace */
 int ptrace( int iRrequest, int iPid, void *pvAddr, void *pvData );
+
+/* SysCall brk*/
+unsigned long __brk (unsigned long limite);
+
 /*@}*/
-
-
-
 
 typedef char* va_list;
 

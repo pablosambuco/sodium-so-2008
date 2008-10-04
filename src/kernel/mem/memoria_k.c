@@ -155,13 +155,13 @@ void *pvFnKRealloc( void *pBloqueAModificar,
         ( (t_nodoOcupado*)
           ( (char*)pBloqueAModificar - sizeof(t_nodoOcupado) )) -> nTamanio;
 
-    // 4 Hay que achicar (o dejar igual) el bloque
+    // 3 Hay que achicar (o dejar igual) el bloque
     // Decidimos no hacerlo, para evita fragmentacion (si linux lo hace...)
     if( uiNuevoTamanio <= uiTamanioOriginal) {
         return pBloqueAModificar;
     }
 
-    // 5 Hay que agrandar bloque
+    // 4 Hay que agrandar bloque
     pNuevoBloque = pvFnKMalloc( uiNuevoTamanio, uiOpciones );
     if( pNuevoBloque == NULL ) {
         //errno = ENOMEM;

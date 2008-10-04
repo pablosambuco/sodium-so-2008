@@ -591,11 +591,9 @@ int iFnCrearProceso(void* pvInicioBinario,
 
     //Se reserva la memoria para el proceso (se usa un unico segmento para
     //Codigo y Datos)
-//TODO CHAU (?)
-//uiBaseSegmento = (unsigned int) pvFnReservarSegmento( SEGMENT_SIZE );
-    uiBaseSegmento = (unsigned int)
-                        pvFnKMalloc(SEGMENT_SIZE, MEM_ALTA | MEM_USUARIO);
 
+
+    
     if( uiBaseSegmento == NULL ) {
         return -ENOMEM;
     }
@@ -694,6 +692,33 @@ int iFnCrearProceso(void* pvInicioBinario,
     return iPosicion;
 }
 
+/**
+ * @brief Realoca un Proceso
+ * @param uiPid Pid del proceso a realocar
+ * @param ulBrk Nuevo tamanio para el proceso 
+ * @returns Ejecucion correcta: 0. Error: -1
+ */
+int iFnRealocarProceso(unsigned long ulPid, unsigned long ulBrk) {
+	
+  stuPCB* pPCB = &pstuPCB[ulPid];
+  unsigned long ulDirBaseNueva;
+
+  ulDirBaseNueva = (unsigned long) pvFnKRealloc((void *)pPCB->uiDirBase, ulBrk, MEM_ALTA | MEM_USUARIO);
+
+  //Si no se pudo hacer el realloc, se deja el segmento como estaba y devolvemos -1
+  if(ulDirBaseNueva == NULL)
+    return -1;
+
+  //Actualizamos el PCB
+  pPCB->uiDirBase = ulDirBaseNueva;
+  pPCB->uiLimite  = ulBrk;
+  pPCB->uiTamProc = ulBrk;
+  uiFnSetearBaseLimiteDescriptor( pPCB->uiIndiceGDT_CS, ulDirBaseNueva, ulBrk); 
+  uiFnSetearBaseLimiteDescriptor( pPCB->uiIndiceGDT_DS, ulDirBaseNueva, ulBrk); 
+
+  return 0;
+}
+
 
 /**
  * @brief Duplica un Proceso
@@ -717,10 +742,7 @@ int iFnDuplicarProceso( unsigned int uiProcPadre ){
 
     //Se reserva la memoria para el proceso (se usa un unico segmento para
     //Codigo y Datos)
-//TODO CHAU- Reemplazar por pvFnKMalloc
-//uiBaseSegmento = (unsigned int) pvFnReservarSegmento( SEGMENT_SIZE );
-    uiBaseSegmento = (unsigned int)
-                        pvFnKMalloc(SEGMENT_SIZE, MEM_ALTA | MEM_USUARIO);
+	uiBaseSegmento = (unsigned int) pvFnReservarSegmento( SEGMENT_SIZE );
 
     if( uiBaseSegmento == NULL ) {
         return -ENOMEM;

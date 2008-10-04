@@ -687,7 +687,11 @@ lFnHandlerSyscall ( long eax, long ebx, long ecx, long edx )
 		case( __NR_sched_rr_get_interval): return lFnSysSchedRrGetInterval ();
   	
   	/*SysCall ptrace*/		      
-		case( __NR_ptrace ):  return lFnSysPtrace( (int) ebx, (void *) ecx );	}
+		case( __NR_ptrace ):  return lFnSysPtrace( (int) ebx, (void *) ecx );	
+    
+  	/*SysCall brk*/		      
+		case( __NR_brk ):  return ulFnSysBrk( (unsigned long) ebx );	
+  }
 	
 	return -ENOSYS;
 }

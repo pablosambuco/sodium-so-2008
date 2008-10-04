@@ -152,6 +152,7 @@ int iFnInstanciarIdle();
 int iFnInstanciarInit();
 
 int iFnCrearProceso();
+int iFnRealocarProceso(unsigned long ulPid, unsigned long ulBrk);
 
 int iFnDuplicarProceso(unsigned int uiProcPadre); /*!< devuelve el indice de PCB/TSS del proceso nuevo */
 int iFnEliminarProceso(unsigned int uiProcesp); /*!< elimina todos los recursos usados por el proceso */
