@@ -373,8 +373,8 @@ int iFnAgrandarHeap( int iTamanio, char** ppcFinHeapAnterior,
     char * pcAux;
     
     //TODO - Reenplazar cuando exista sbrk()
-//  pcAux = (char*) sbrk( iTamanio );
-    pcAux = (char*) (16 * 1024);        //16K
+    pcAux = (char*) sbrk( iTamanio );
+//  pcAux = (char*) (16 * 1024);        //16K
 
     if( (int)pcAux == (-1) ) {
         //El SO no nos da mas memoria
@@ -385,8 +385,8 @@ int iFnAgrandarHeap( int iTamanio, char** ppcFinHeapAnterior,
     *ppcFinHeapAnterior = pcAux;
 
     //TODO - Reenplazar cuando exista sbrk()
-//  *ppcFinHeapNuevo = (char*) sbrk( 0 );   //Suponemos que un sbrk(0) no falla
-    *ppcFinHeapNuevo = (char*) ( 32 * 1024 );   //32K 
+    *ppcFinHeapNuevo = (char*) sbrk( 0 );   //Suponemos que un sbrk(0) no falla
+//  *ppcFinHeapNuevo = (char*) ( 32 * 1024 );   //32K 
 
     return 0;
 }
