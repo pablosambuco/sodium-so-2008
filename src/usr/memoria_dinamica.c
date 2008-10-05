@@ -33,7 +33,7 @@ void * malloc (unsigned int uiTamanioDeseado) {
      * segmento de datos.
      */
     char * pcFinDeHeap; 
-    static char * pcAntiguoFinDeHeap; 
+    char * pcAntiguoFinDeHeap; 
 
     static char stcExisteHeap = 0;
     
@@ -102,10 +102,12 @@ void * malloc (unsigned int uiTamanioDeseado) {
             errno = ENOMEM;
             return NULL;
         }
-        
+       
+        //TODO - lala - Arreglar esto: el ultimo nodo en la lista de libres no
+        //es el de direccion mas alta (es el mas grande)
         //Si el ultimo nodo libre llegaba hasta el final del segmento, se le
         //acopla el nuevo espacio libre, si no, se crea un nuevo nodo
-        if( pcAntiguoFinDeHeap == ( (char*)pNodoAnteriorAlBloque) + 
+/*        if( pcAntiguoFinDeHeap == ( (char*)pNodoAnteriorAlBloque) + 
                                         pNodoAnteriorAlBloque->nTamanio + 
                                         sizeof(t_nodoOcupado) ) {
             iFnImprimir_usr("\nmalloc: Acoplando espacio libre al ultimo nodo.");
@@ -115,14 +117,14 @@ void * malloc (unsigned int uiTamanioDeseado) {
             //Se busca el anterior al bloque libre (ahora sabemos que existe)
             pNodoAnteriorAlBloque = (t_nodo*)pvFnBuscarNodoAnteriorMemoriaLibre(
                                     uiTamanioDeseado + sizeof(t_nodoOcupado) );
-        } else {
+        } else {*/
             iFnImprimir_usr("\nmalloc: Creando nuevo bloque de espacio libre.");
             //Se lo agrega a la lista de libres (SIEMPRE sera el ultimo nodo)
             pNodoAnteriorAlBloque->pNodoSig = (t_nodo *) pcAntiguoFinDeHeap;
             pNodoAnteriorAlBloque->pNodoSig->pNodoSig = NULL;
             pNodoAnteriorAlBloque->pNodoSig->nTamanio =
                             pcFinDeHeap - pcAntiguoFinDeHeap - sizeof(t_nodo);
-        }
+/*        }*/
 
         pcAntiguoFinDeHeap = pcFinDeHeap;
     }
@@ -372,9 +374,7 @@ int iFnAgrandarHeap( int iTamanio, char** ppcFinHeapAnterior,
                                    char** ppcFinHeapNuevo ) {
     char * pcAux;
     
-    //TODO - Reenplazar cuando exista sbrk()
     pcAux = (char*) sbrk( iTamanio );
-//  pcAux = (char*) (16 * 1024);        //16K
 
     if( (int)pcAux == (-1) ) {
         //El SO no nos da mas memoria
@@ -384,9 +384,7 @@ int iFnAgrandarHeap( int iTamanio, char** ppcFinHeapAnterior,
     }
     *ppcFinHeapAnterior = pcAux;
 
-    //TODO - Reenplazar cuando exista sbrk()
-    *ppcFinHeapNuevo = (char*) sbrk( 0 );   //Suponemos que un sbrk(0) no falla
-//  *ppcFinHeapNuevo = (char*) ( 32 * 1024 );   //32K 
+    *ppcFinHeapNuevo = (char*) sbrk( 0 );
 
     return 0;
 }

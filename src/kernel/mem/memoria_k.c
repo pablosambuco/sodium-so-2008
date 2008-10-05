@@ -142,12 +142,14 @@ void *pvFnKRealloc( void *pBloqueAModificar,
 
     // 1 Caso trivial, pBloqueAModificar == NULL; hacemos malloc
     if( pBloqueAModificar == NULL ) {
+        vFnLog("\npvFnKRealloc: Actuando como malloc");
         return pvFnKMalloc(uiNuevoTamanio, uiOpciones);
     }
 
     // 2 Caso trivial, uiNuevoTamanio == 0; hacemos free
     if( uiNuevoTamanio == 0) {
         vFnKFree(pBloqueAModificar);
+        vFnLog("\npvFnKRealloc: Actuando como free");
         return NULL;
     }
 
@@ -156,8 +158,10 @@ void *pvFnKRealloc( void *pBloqueAModificar,
           ( (char*)pBloqueAModificar - sizeof(t_nodoOcupado) )) -> nTamanio;
 
     // 3 Hay que achicar (o dejar igual) el bloque
-    // Decidimos no hacerlo, para evita fragmentacion (si linux lo hace...)
+    // Decidimos no hacerlo, para evitar fragmentacion (si linux lo hace...)
     if( uiNuevoTamanio <= uiTamanioOriginal) {
+        vFnLog("\npvFnKRealloc: Achicando un bloque de %d bytes a %d bytes",
+                uiTamanioOriginal, uiNuevoTamanio);
         return pBloqueAModificar;
     }
 
@@ -165,6 +169,7 @@ void *pvFnKRealloc( void *pBloqueAModificar,
     pNuevoBloque = pvFnKMalloc( uiNuevoTamanio, uiOpciones );
     if( pNuevoBloque == NULL ) {
         //errno = ENOMEM;
+        vFnLog("\npvFnKRealloc: ERROR! No se puede crear bloque de destino");
         return NULL;
     }
 
@@ -183,6 +188,8 @@ void *pvFnKRealloc( void *pBloqueAModificar,
 
     vFnKFree( pBloqueAModificar );
 
+    vFnLog("\npvFnKRealloc: OK! Agrandado un bloque de %d bytes a %d bytes",
+            uiTamanioOriginal, uiNuevoTamanio);
     return pNuevoBloque;
 }
 

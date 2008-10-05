@@ -1175,19 +1175,24 @@ long lFnSysPtrace( int iRequest, void *pvDirParam ) {
 // ***************************************************************************
 
 unsigned long ulFnSysBrk(unsigned long ulBrk) {
-	
-	unsigned long ulPid = pstuPCB[ulProcActual].ulId;
 
-  //Si recibimos NULL como parametro, devolvemos el limite actual
-  if(ulBrk == NULL) {
+    unsigned long ulPid = pstuPCB[ulProcActual].ulId;
+
+    //Si recibimos NULL como parametro, devolvemos el limite actual
+    if( ulBrk == NULL ) {
+        return pstuPCB[ulProcActual].uiLimite;
+    }
+
+    //Intenta redimensionar, y si hay error devuelve NULL
+    if( iFnRedimensionarProceso(ulPid, ulBrk) == -1 ) {
+        //TODO - lala - donde asignar errno = EAGAIN o ENOMEM
+        return NULL;
+    }
+
+    /**
+     * \note Sodium NO INICIALIZA la memoria que se agrega (si es que se agrego memoria). SCO la inicializa a 0 (http://osr507doc.sco.com/en/man/html.S/brk.S.html). Linux no inicializa.
+     */
+
+    //Se realoJo, devolvemos el nuevo limite
     return pstuPCB[ulProcActual].uiLimite;
-  }
-  
-  //Intenta realocar, y si hay error devuelve NULL
-  if(iFnRealocarProceso(ulPid,ulBrk) == -1) {
-    return NULL;
-  }
-
-  //Se realoco, devolvemos el nuevo limite
-  return pstuPCB[ulProcActual].uiLimite;
 }

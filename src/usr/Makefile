@@ -19,11 +19,11 @@ OBJETOS_USR:= reloj.o \
               p1.bin
 
 OBJETOS_LIBSODIUM:= sodstdio.o \
-										sodstd.o \
+					sodstd.o \
                     sodstdlib.o \
                     sodstdlib_asm.o \
-										sodstring.o \
-										memoria_dinamica.o 
+					sodstring.o \
+					memoria_dinamica.o 
 
 all:	$(OBJETOS_USR)  
 

@@ -691,31 +691,44 @@ int iFnCrearProceso(void* pvInicioBinario,
     return iPosicion;
 }
 
+
 /**
- * @brief Realoca un Proceso
+ * @brief Redimensiona un Proceso (cambia tamanios de segmentos de codigo y datos y actualiza las estructuras asodiadas (GDT, PCB, TSS, etc) )
  * @param uiPid Pid del proceso a realocar
  * @param ulBrk Nuevo tamanio para el proceso 
  * @returns Ejecucion correcta: 0. Error: -1
  */
-int iFnRealocarProceso(unsigned long ulPid, unsigned long ulBrk) {
-	
-  stuPCB* pPCB = &pstuPCB[ulPid];
-  unsigned long ulDirBaseNueva;
+int iFnRedimensionarProceso(unsigned long ulPid, unsigned long ulBrk) {
+    unsigned long ulDirBaseNueva;
+    stuPCB* pPCB;
+    
+    pPCB = &pstuPCB[ iFnBuscaPosicionProc(ulPid) ];
+  
+    //TODO - lala - comprobar que el nuevo ulBrk no sea inferior al minimo
+    // permitido para este proceso (menor al area de codio [y stack?]) ni sea
+    // mayor al maximo de memoria permitido para un proceso [hoy en dia no
+    // existe tal cosa]
 
-  ulDirBaseNueva = (unsigned long) pvFnKRealloc((void *)pPCB->uiDirBase, ulBrk, MEM_ALTA | MEM_USUARIO);
-
-  //Si no se pudo hacer el realloc, se deja el segmento como estaba y devolvemos -1
-  if(ulDirBaseNueva == NULL)
-    return -1;
-
-  //Actualizamos el PCB
-  pPCB->uiDirBase = ulDirBaseNueva;
-  pPCB->uiLimite  = ulBrk;
-  pPCB->uiTamProc = ulBrk;
-  uiFnSetearBaseLimiteDescriptor( pPCB->uiIndiceGDT_CS, ulDirBaseNueva, ulBrk); 
-  uiFnSetearBaseLimiteDescriptor( pPCB->uiIndiceGDT_DS, ulDirBaseNueva, ulBrk); 
-
-  return 0;
+    //TODO - lala - cambiar realloc por una funcion que llame a realloc
+    ulDirBaseNueva = (unsigned long) pvFnKRealloc(
+                        (void *)pPCB->uiDirBase, ulBrk, MEM_ALTA | MEM_USUARIO);
+  
+    //Si no se pudo hacer el realloc, se deja el segmento como estaba y
+    //devolvemos -1
+    if(ulDirBaseNueva == NULL) {
+        vFnLog("\niFnRedimensionarProceso: No se pudo redimensionar proceso");
+        return -1;
+    }
+  
+    //Actualizamos el PCB
+    pPCB->uiDirBase = ulDirBaseNueva;
+    pPCB->uiLimite  = ulBrk;
+    pPCB->uiTamProc = ulBrk;
+    uiFnSetearBaseLimiteDescriptor(pPCB->uiIndiceGDT_CS, ulDirBaseNueva, ulBrk);
+    uiFnSetearBaseLimiteDescriptor(pPCB->uiIndiceGDT_DS, ulDirBaseNueva, ulBrk);
+    
+    vFnLog("\niFnRedimensionarProceso: Se redimensiono Proceso PID=%d", ulPid);
+    return 0;
 }
 
 
