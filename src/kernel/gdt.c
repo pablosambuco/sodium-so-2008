@@ -44,9 +44,11 @@ unsigned char iMapaGDT[ TOTAL_ENTRADAS_GDT / 8 ];
 #define mapa_gdt_set( pos, set ) _SET_BIT( iMapaGDT, pos, set )
 #define mapa_gdt_get( pos ) _GET_BIT( iMapaGDT, pos )
 
-#define mapa_segmentos_set( pos, set ) _SET_BIT( iMapaSegmentos, pos, set )
-#define mapa_segmentos_get( pos ) _GET_BIT( iMapaSegmentos, pos )
+#define EN_GRANULARIDAD_4K( x ) ( ((x) + 0x0FFF) >> 12 )
+#define EN_GRANULARIDAD_1B( x ) ( (x) << 12 )
 
+#define REDONDEAR_HACIA_ARRIBA_A_4K( x ) \
+                ( EN_GRANULARIDAD_1B( EN_GRANULARIDAD_4K (x) ) )
 
 /**
  * @brief Inicializa la GDT y la tabla de PCBs
@@ -703,6 +705,10 @@ int iFnRedimensionarProceso(unsigned long ulPid, unsigned long ulBrk) {
     stuPCB* pPCB;
     
     pPCB = &pstuPCB[ iFnBuscaPosicionProc(ulPid) ];
+
+    //Convertimos la direccion de BRK en multiplo de 4Kb, ya que usamos los
+    //descriptores para los procesos con granularidad 4Kb
+    ulBrk = REDONDEAR_HACIA_ARRIBA_A_4K(ulBrk);
   
     //TODO - lala - comprobar que el nuevo ulBrk no sea inferior al minimo
     // permitido para este proceso (menor al area de codio [y stack?]) ni sea
@@ -720,13 +726,17 @@ int iFnRedimensionarProceso(unsigned long ulPid, unsigned long ulBrk) {
         return -1;
     }
   
-    //Actualizamos el PCB
+    //Actualizamos el PCB 
     pPCB->uiDirBase = ulDirBaseNueva;
     pPCB->uiLimite  = ulBrk;
     pPCB->uiTamProc = ulBrk;
-    uiFnSetearBaseLimiteDescriptor(pPCB->uiIndiceGDT_CS, ulDirBaseNueva, ulBrk);
-    uiFnSetearBaseLimiteDescriptor(pPCB->uiIndiceGDT_DS, ulDirBaseNueva, ulBrk);
     
+    //Actualizamos los descriptores de la GDT (granularidad 4Kb)
+    uiFnSetearBaseLimiteDescriptor(pPCB->uiIndiceGDT_CS, ulDirBaseNueva,
+            EN_GRANULARIDAD_4K(ulBrk) );
+    uiFnSetearBaseLimiteDescriptor(pPCB->uiIndiceGDT_DS, ulDirBaseNueva,
+            EN_GRANULARIDAD_4K(ulBrk) );
+   
     vFnLog("\niFnRedimensionarProceso: Se redimensiono Proceso PID=%d", ulPid);
     return 0;
 }
@@ -944,7 +954,10 @@ vFnImprimir( "\n fork(): EAX (modificado): %x", stuTSSTablaTareas[iPosicion].eax
 
 
     // Finalmente, el proceso PADRE tiene un hijo mas!
-    ++pstuPCB[uiProcPadre].lNHijos;    
+    ++pstuPCB[uiProcPadre].lNHijos; 
+
+    // Agregado 07/10/08:
+    pstuPCB[iPosicion].ulParentId = pstuPCB[uiProcPadre].ulId;
 
     return iPosicion;
 }
@@ -1044,6 +1057,7 @@ int iFnReemplazarProceso(
  * @returns La posicion dentro de la tabla de PCBs del proceso eliminado
  */
 int iFnEliminarProceso( unsigned int uiProceso ) {
+    int iPCBPadre;
     /* Marcamos el segmento que ocupaba como disponible: */
 /*    vFnImprimir( "\n waitpid(): Liberando el segmento %d, base %x",
              pstuPCB[ uiProceso ].uiDirBase / SEGMENT_SIZE,
@@ -1064,6 +1078,12 @@ int iFnEliminarProceso( unsigned int uiProceso ) {
     mapa_gdt_set( pstuPCB[ uiProceso ].uiIndiceGDT_CS,  0 );
     mapa_gdt_set( pstuPCB[ uiProceso ].uiIndiceGDT_DS,  0 );
     mapa_gdt_set( pstuPCB[ uiProceso ].uiIndiceGDT_TSS, 0 );
+
+    // Despertamos al padre, si es que lo estaba esperando
+    iPCBPadre = iFnBuscaPosicionProc( pstuPCB[ uiProceso ].ulParentId );
+    if (pstuPCB[iPCBPadre].iEstado == PROC_ESPERANDO) {
+        pstuPCB[iPCBPadre].iEstado = PROC_LISTO;
+    }
 
     /* Liberamos la PCB que utilizaba (y por consiguiente, la entrada en la
      * tabla de TSS */

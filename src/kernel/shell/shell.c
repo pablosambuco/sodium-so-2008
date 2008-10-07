@@ -47,7 +47,7 @@ extern unsigned int uiTamanioBSS;
 extern unsigned int uiTamanioKernel;
 extern unsigned int uiModoMemoria;
 extern stuVentana pstuVentana[HWND_VENTANA_MAX];
-extern int iMatrizMf[30][2];
+//TODO: CHAU, ya no existe: extern int iMatrizMf[30][2];
 extern int iTamanioPagina;
 
 extern semaforo semaforosEnElSistema[CANTMAXSEM];
@@ -849,6 +849,7 @@ void vFnMenuInstanciarInit()
     //de eliminar el segmento del proceso hijo, por lo que no perdemos memoria
     lRetorno = lFnSysWaitPid( pstuPCB[uiPosicion].ulId, &iStatus, 0 );
 }
+
 
 /**
 \fn void vFnMenuCambiaTeclado(int iComandoPos)

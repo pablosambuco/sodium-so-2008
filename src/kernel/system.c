@@ -228,55 +228,49 @@ vFnExcepcionCPU6 ()
   vFnImprimir ("\nOpCode Invalido...");
   ASM_HLT;
 }
-/******************************************************************************
-Funcion:
-Descripcion:
-Recibe:   
-Devuelve: 
-*******************************************************************************/
-void
-vFnExcepcionCPU7 ()
-{
-  //Esta funcion es llamada desde vFnExcepcionCPU7_Asm
+
+
+/**
+\brief Atiende la Excepcion de CPU 7 (Primer uso de CPU despues de un TaskSwitch), salva el contexto de la FPU en la TSS del ultimo proceso que la uso
+\note Esta funcion es llamada por vFnExcepcionCPU7_Asm
+*/
+void vFnExcepcionCPU7 () {
+    stuTSS * stuTSSProcActual, * stuTSSProcAnterior;
   
-  stuTSS * stuTSSProcActual, * stuTSSProcAnterior;
+    //Antes que nada, limpiamos TS
+    asm volatile ("clts \n");
 
-  //Antes que nada, limpiamos TS
-  asm volatile ("clts \n");
+    //Hacemos 'guardado diferido' (lazy saving), solo se guarda el entorno de
+    //la FPU cuando OTRO proceso necesita usarla
+    if ( ulUltimoProcesoEnFPU != pstuPCB[ulProcActual].ulId ) {
+        stuTSSProcActual =
+            &stuTSSTablaTareas[ pstuPCB[ulProcActual].ulLugarTSS ];
+        stuTSSProcAnterior =
+            &stuTSSTablaTareas[pstuPCB[iFnBuscaPosicionProc(ulUltimoProcesoEnFPU)].ulLugarTSS ];
 
-  //Hacemos 'guardado diferido' (lazy saving), solo se guarda el entorno de
-  //la FPU cuando OTRO proceso necesita usarla
-  if ( ulUltimoProcesoEnFPU != pstuPCB[ulProcActual].ulId )
-  {
-	  stuTSSProcActual = &stuTSSTablaTareas[ pstuPCB[ulProcActual].ulLugarTSS ];
-	  stuTSSProcAnterior = &stuTSSTablaTareas[pstuPCB[iFnBuscaPosicionProc(ulUltimoProcesoEnFPU)].ulLugarTSS ];
+        if( ulUltimoProcesoEnFPU ) //TODO - Los procesos son > 0 ?
+        {
+            //Se guarda el estado actual de la FPU, en la TSS del proceso que la
+            //uso la ultima vez 
+            //Que pasa si ya termino?
+            asm volatile(
+                    "fnsave %0\n"
+                    "fwait	\n"
+                    : "=m" (stuTSSProcAnterior->fpu) );
+        }
 
-	  if( ulUltimoProcesoEnFPU ) //TODO - Los procesos son > 0 ?
-	  {
-		  //Se guarda el estado actual de la FPU, en la TSS del proceso que la
-		  //uso la ultima vez 
-		  //Que pasa si ya termino?
-		  asm volatile(
-				  "fnsave %0\n"
-				  "fwait	\n"
-				  : "=m" (stuTSSProcAnterior->fpu) );
-	  }
-
-	  //Se recupera el estado de la FPU del proceso que ejecuta ahora 
-	  //Si nunca habia usado la FPU, se cargaran los valores por defecto,
-	  //ya almacenados al crear la TSS del proceso
-	  asm volatile(
-			  "frstor %0\n"
-			  : : "m" (stuTSSProcActual->fpu) );
-
-	  ulUltimoProcesoEnFPU = pstuPCB[ulProcActual].ulId;
-  }
-
-/*  ASM_CLI;
-  PASAR_A_SELECTOR_DATOS_KERNEL;
-  vFnImprimir ("\nCoprocesador No Disponible...");
-  ASM_HLT;*/
+        //Se recupera el estado de la FPU del proceso que ejecuta ahora 
+        //Si nunca habia usado la FPU, se cargaran los valores por defecto,
+        //ya almacenados al crear la TSS del proceso
+        asm volatile(
+                "frstor %0\n"
+                : : "m" (stuTSSProcActual->fpu) );
+        
+        ulUltimoProcesoEnFPU = pstuPCB[ulProcActual].ulId;
+    }
 }
+
+
 /******************************************************************************
 Funcion:
 Descripcion:
@@ -347,21 +341,41 @@ vFnExcepcionCPU12 ()
   vFnImprimir ("\nExcepcion de Stack...");
   ASM_HLT;
 }
-/******************************************************************************
-Funcion:
-Descripcion:
-Recibe:   
-Devuelve: 
-*******************************************************************************/
-void
-vFnExcepcionCPU13 ()
-{
-  ASM_CLI;
-  PASAR_A_SELECTOR_DATOS_KERNEL;
-  vFnImprimir ("\nExcepcion de Proteccion General (Triple Fault)...");
-  vFnMostrarRegistrosvCPU ();
-  ASM_HLT;
+
+
+/**
+\brief Atiende la Excepcion de CPU 13 (Excepcion de Proteccion General - Triple Fault)
+\note Esta funcion es llamada por vFnExcepcionCPU13_Asm
+*/
+void vFnExcepcionCPU13 () {
+    int iPCBPadre;
+   
+    iPCBPadre = iFnBuscaPosicionProc(pstuPCB[ulProcActual].ulParentId);
+  
+    vFnImprimir("\nViolacion de Segmento (Segmentation Fault)");
+    vFnMostrarRegistrosvCPU ();
+
+    //TODO - Pasar a LOG (cuando Sodium no se cuelgue mas)
+    vFnImprimir("\nExcepcion de Proteccion General (Triple Fault): ");
+    vFnImprimir("SEGFAULT del Proceso PID=%d \"%s\" ",
+            pstuPCB[ulProcActual].ulId, pstuPCB[ulProcActual].stNombre);
+  
+    /* Hacemos que el proceso no ejecute mas (marcandolo como Zombie) y 
+     * despertamos al Padre si lo estaba esperando. Luego llamamos al
+     * planificador para que ejecute otro proceso. Sera el proceso Padre quien
+     * se encargue de eliminar al Hijo (es tarea de la syscal waitpid; si el
+     * Padre no lo espera, el proceso queda Zombie)
+     */
+    pstuPCB[ulProcActual].iEstado = PROC_ZOMBIE;
+    pstuPCB[ulProcActual].iExitStatus = -10; //Valor arbitrario
+
+    if (pstuPCB[iPCBPadre].iEstado == PROC_ESPERANDO) {
+        pstuPCB[iPCBPadre].iEstado = PROC_LISTO;
+    }
+    vFnPlanificador();
 }
+
+
 /******************************************************************************
 Funcion:
 Descripcion:
@@ -390,62 +404,58 @@ vFnExcepcionCPU15 ()
   vFnImprimir ("\nExcepcion Desconocida...");
   ASM_HLT;
 }
-/******************************************************************************
-Funcion:
-Descripcion:
-Recibe:   
-Devuelve: 
-*******************************************************************************/
-void
-vFnExcepcionCPU16 ()
-{
-  //Esta funcion es llamada desde vFnExcepcionCPU16_Asm
-  u16 usiEstadoFPU;
-  u16 usiControlFPU;
-   
-  //guardamos las palabras de estado y control del FPU
-  asm volatile( "fnstsw %0\n"
-		  		"fnstcw %1\n"
- 				: "=m" (usiEstadoFPU),
- 				  "=m" (usiControlFPU));
 
-  //Se limpian las excepciones
-  asm volatile( "fnclex" );
 
-  //ignoramos las excepciones enmascaradas
-  usiEstadoFPU = (~usiControlFPU) & usiEstadoFPU;
-  usiEstadoFPU &= 0x003F;
+/**
+\brief Atiende la Excepcion de CPU 16 (Excepcion en el uso de la FPU)
+\note Esta funcion es llamada por vFnExcepcionCPU16_Asm
+*/
+void vFnExcepcionCPU16 () {
+    u16 usiEstadoFPU;
+    u16 usiControlFPU;
   
-  //identificamos el origen de la excepcion e imprimimos un mensaje acorde
-  //TODO esto deberia hacerse por el manejador de señales pero hoy en dia solo se estan recibiendo dos parametros
-  switch (usiEstadoFPU) {
-	case 0x0001:
-		  vFnImprimir("\nFPU: Error de Operacion Invalida");
-		  break;  
-	case 0x0002:
-		  vFnImprimir("\nFPU: Error de Operando Denormalizado");
-		  break;
-  	case 0x0004:
-		  vFnImprimir("\nFPU: Error de Division por Cero");
-		  break;  
-	case 0x0008:
-		  vFnImprimir("\nFPU: Error de Overflow");
-		  break;
-  	case 0x0010:
-  		  vFnImprimir("\nFPU: Error de Underflow");
-  		  break;  
-  	case 0x0020:
-		  vFnImprimir("\nFPU: Error de Precision");
-		  break;
-	default: 
-		  vFnImprimir("\nFPU: Error no especificado");
-		  break;
-  } 		  
-		  	
-  //Se envia la senial
-  lFnSysKill(pstuPCB[ulProcActual].ulId,SIGFPE);  
+    //guardamos las palabras de estado y control del FPU
+    asm volatile( "fnstsw %0\n"
+            "fnstcw %1\n"
+            : "=m" (usiEstadoFPU),
+            "=m" (usiControlFPU));
+    
+    //Se limpian las excepciones
+    asm volatile( "fnclex" );
+  
+    //ignoramos las excepciones enmascaradas
+    usiEstadoFPU = (~usiControlFPU) & usiEstadoFPU;
+    usiEstadoFPU &= 0x003F;
+  
+    //identificamos el origen de la excepcion e imprimimos un mensaje acorde
+    //TODO esto deberia hacerse por el manejador de señales pero hoy en dia solo se estan recibiendo dos parametros
+    switch (usiEstadoFPU) {
+        case 0x0001:
+            vFnImprimir("\nFPU: Error de Operacion Invalida");
+            break;  
+        case 0x0002:
+            vFnImprimir("\nFPU: Error de Operando Denormalizado");
+            break;
+        case 0x0004:
+            vFnImprimir("\nFPU: Error de Division por Cero");
+            break;  
+        case 0x0008:
+            vFnImprimir("\nFPU: Error de Overflow");
+            break;
+        case 0x0010:
+            vFnImprimir("\nFPU: Error de Underflow");
+            break;  
+        case 0x0020:
+            vFnImprimir("\nFPU: Error de Precision");
+            break;
+        default: 
+            vFnImprimir("\nFPU: Error no especificado");
+            break;
+    } 		  
+    
+    //Se envia la senial
+    lFnSysKill(pstuPCB[ulProcActual].ulId,SIGFPE);  
 }
-
 
 
 /******************************************************************************
@@ -472,7 +482,7 @@ vFnIniciarExcepciones ()
   vFnAsignarFuncionExcepcion (10, vFnExcepcionCPU10);
   vFnAsignarFuncionExcepcion (11, vFnExcepcionCPU11);
   vFnAsignarFuncionExcepcion (12, vFnExcepcionCPU12);
-  vFnAsignarFuncionExcepcion (13, vFnExcepcionCPU13);
+  vFnAsignarFuncionExcepcion (13, vFnExcepcionCPU13_Asm);
   vFnAsignarFuncionExcepcion (14, vFnExcepcionCPU14);
   vFnAsignarFuncionExcepcion (15, vFnExcepcionCPU15);
   vFnAsignarFuncionExcepcion (16, vFnExcepcionCPU16_Asm);

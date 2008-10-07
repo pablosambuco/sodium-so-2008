@@ -14,6 +14,7 @@ void vFnHandlerGenerico_Asm();  /*!<Handler generico para las interrupciones*/
 void vFnHandlerTimer_Asm();     /*!<Handler para la interrupcion del timer (int 0x20)*/
 void vFnHandlerTeclado_Asm();  /*!<Handler para la interrupcion del teclado (int 0x21)*/
 void vFnExcepcionCPU7_Asm();   /*!<Handler para excepcion x primer uso de FPU*/
+void vFnExcepcionCPU13_Asm();  /*!<Handler para excepcion d Proteccion General*/
 void vFnExcepcionCPU16_Asm();  /*!<Handler para excepcion en uso de FPU*/
 void vFnHandlerSyscall_Asm();  /*!<Handler para los syscall*/
 

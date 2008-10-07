@@ -5,6 +5,7 @@ global vFnHandlerGenerico_Asm
 global vFnHandlerTimer_Asm
 global vFnHandlerTeclado_Asm
 global vFnExcepcionCPU7_Asm
+global vFnExcepcionCPU13_Asm
 global vFnExcepcionCPU16_Asm
 global vFnHandlerSyscall_Asm
 
@@ -13,6 +14,7 @@ extern vFnHandlerTimer	    ;Definido en system.c
 extern vFnHandlerTeclado	;Definido en system.c
 extern lFnHandlerSyscall	;Definido en system.c
 extern vFnExcepcionCPU7 	;Definido en system.c
+extern vFnExcepcionCPU13	;Definido en system.c
 extern vFnExcepcionCPU16	;Definido en system.c
 
 ;****************************
@@ -394,6 +396,31 @@ vFnExcepcionCPU7_Asm:
 
 	call vFnExcepcionCPU7
 	;clts
+
+	SALIDA_STACK_KRNL
+
+	popad
+	
+	iret
+
+
+;****************************************************************************
+;* Funcion: vFnExcepcionCPU13_Asm                                           *
+;* Descripcion: Handler para el manejo de la excepcion 13 (Error de         *
+;*              Proteccion General (Triple Fault)                           *
+;*              Ya que es ISR es necesario retornar con IRET, y el GCC no   *
+;*		        dispone de esta facilidad.                                  *
+;* Parametros: Ninguno							                            *
+;* Valor devuelto: Ninguno						                            *
+;* Ultima Modificacion: 07-11-2008					                        *
+;****************************************************************************
+vFnExcepcionCPU13_Asm:
+
+	pushad
+	
+	ENTRADA_STACK_KRNL
+
+    call vFnExcepcionCPU13
 
 	SALIDA_STACK_KRNL
 

@@ -6,6 +6,12 @@ int main(){
     void * pvPuntero2;
     void * pvPuntero3;
 
+
+    //Esto deberia ser una violacion de segmento si nuestro proceso tiene < 4Mb
+    char * pcPunteroMortal = (char *) (4 * 1024 * 1024);
+    *pcPunteroMortal = 1;
+
+
     pvPuntero1 = malloc( 100 );
     pvPuntero2 = malloc( 200 );
     pvPuntero3 = malloc( 300 );

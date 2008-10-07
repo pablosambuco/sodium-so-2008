@@ -121,10 +121,6 @@ void *pvFnKMalloc(dword nTamanio, unsigned int uiOpciones)
 }
 
 
-
-
-
-
 /**
 \brief Modifica un bloque de memoria reservado dinamicamente
 \param pBloqueAModificar Puntero al bloque de memoria a modificar
@@ -189,7 +185,7 @@ void *pvFnKRealloc( void *pBloqueAModificar,
     vFnKFree( pBloqueAModificar );
 
     vFnLog("\npvFnKRealloc: OK! Agrandado un bloque de %d bytes a %d bytes",
-            uiTamanioOriginal, uiNuevoTamanio);
+            uiTamanioOriginal-sizeof(t_nodoOcupado), uiNuevoTamanio);
     return pNuevoBloque;
 }
 
