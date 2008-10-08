@@ -189,8 +189,7 @@ bochs_cdrom: all iso
 gdb:
 	gdb --quiet --ex 'target remote localhost:1234' -s ../kernel/main.ld
 
-clean: 
-#clean_img
+clean: clean_img
 	$(MAKE) -C $(DIR_SODIUM_BASE) $@
 	rm -f $(ALL) *.o *.log tags
 	-rm -rf cdrom_iso_tmp

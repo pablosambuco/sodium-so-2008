@@ -109,6 +109,7 @@ clean:
 	@$(PRINT) Borrando los objetos del SODIUM.
 	@$(PRINT) ================================================================================
 	@-find . -name tags -exec rm '{}' \;
+	@-find . -name Makefile.bak -exec rm '{}' \;
 	@-rm *.log 
 	@$(MAKE) -i -s -C $(DIR_DOCS)   $@ 2>/dev/null
 	@$(MAKE) -i -s -C $(DIR_SOLO)   $@ 2>/dev/null
@@ -116,3 +117,4 @@ clean:
 	@$(MAKE) -i -s -C $(DIR_MBR)	$@ 2>/dev/null
 	@$(MAKE) -i -s -C $(DIR_USR)	$@ 2>/dev/null
 	@$(MAKE) -i -s -C $(DIR_FS)	$@ 2>/dev/null
+	@-rm tests/simbolos.txt
