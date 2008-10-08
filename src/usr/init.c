@@ -6,14 +6,17 @@ int main(){
 	int iPid,iStatus,iOpcion;
 	iFnImprimirNumero( "\nSoy el padre, mi pid es ", getpid() );
 
-
-    /*   
-        int * tnt;
-        tnt = (int *)0xFFFFFFFF;
-        write(0, "\n\nBANG!!!\n\n", 0);
-        *tnt = 1000;
-    */
-
+/*
+    //Probando limites del segmento: suponiendo que nuestro proceso tiene 32Kb
+        char * pcPunteroMortal;
+    //Cada uno de estos es una violacion de segmento:
+        //pcPunteroMortal = (char *) (36 * 1024);         *pcPunteroMortal = 1;
+        //pcPunteroMortal = (char *) (36 * 1024 - 1);     *pcPunteroMortal = 1;
+        //pcPunteroMortal = (char *) (32 * 1024);         *pcPunteroMortal = 1;
+    //Esto NO es violacion de segmento:
+        //...pero seguramente ensucia el stack del proceso
+        pcPunteroMortal = (char *) (32 * 1024 - 1);     *pcPunteroMortal = 1;
+*/
 
 	iPid = fork();
 	if( !iPid ){

@@ -355,10 +355,9 @@ void vFnExcepcionCPU13 () {
     vFnImprimir("\nViolacion de Segmento (Segmentation Fault)");
     vFnMostrarRegistrosvCPU ();
 
-    //TODO - Pasar a LOG (cuando Sodium no se cuelgue mas)
-    vFnImprimir("\nExcepcion de Proteccion General (Triple Fault): ");
-    vFnImprimir("SEGFAULT del Proceso PID=%d \"%s\" ",
-            pstuPCB[ulProcActual].ulId, pstuPCB[ulProcActual].stNombre);
+    vFnLog("\nExcepcion de Proteccion General (Triple Fault) (ExcCPU13):");
+    vFnLog(" SEGFAULT del Proceso PID=%d \"%s\" ", pstuPCB[ulProcActual].ulId,
+            pstuPCB[ulProcActual].stNombre);
   
     /* Hacemos que el proceso no ejecute mas (marcandolo como Zombie) y 
      * despertamos al Padre si lo estaba esperando. Luego llamamos al
@@ -368,6 +367,18 @@ void vFnExcepcionCPU13 () {
      */
     pstuPCB[ulProcActual].iEstado = PROC_ZOMBIE;
     pstuPCB[ulProcActual].iExitStatus = -10; //Valor arbitrario
+
+    /* Si el proceso que hizo SEGFAULT es el Shell, mostramos por la pantalla
+     * estandar estos mensajes, porque es muy probable que el usuario no pueda
+     * ve el LOG
+     */
+    if( pstuPCB[ulProcActual].ulId == 1 ) { //Proceso Shell
+        vFnImprimir("\nExcepcion de Proteccion General (Triple Fault) "
+                    "(ExcCPU13):");
+        vFnImprimir(" SEGFAULT del Proceso PID=%d \"%s\" ",
+                pstuPCB[ulProcActual].ulId, pstuPCB[ulProcActual].stNombre);
+        vFnImprimir("\nExcCPU13: Eliminando proceso SHELL. Anda el reloj?");
+    }
 
     if (pstuPCB[iPCBPadre].iEstado == PROC_ESPERANDO) {
         pstuPCB[iPCBPadre].iEstado = PROC_LISTO;

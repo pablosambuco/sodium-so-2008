@@ -7,9 +7,15 @@ int main(){
     void * pvPuntero3;
 
 
-    //Esto deberia ser una violacion de segmento si nuestro proceso tiene < 4Mb
-    char * pcPunteroMortal = (char *) (4 * 1024 * 1024);
-    *pcPunteroMortal = 1;
+    //Probando limites del segmento: suponiendo que nuestro proceso tiene 32Kb
+        char * pcPunteroMortal;
+    //Cada uno de estos es una violacion de segmento:
+        //pcPunteroMortal = (char *) (36 * 1024);         *pcPunteroMortal = 1;
+        //pcPunteroMortal = (char *) (36 * 1024 - 1);     *pcPunteroMortal = 1;
+        //pcPunteroMortal = (char *) (32 * 1024);         *pcPunteroMortal = 1;
+    //Esto NO es violacion de segmento:
+        //...pero seguramente ensucia el stack del proceso
+        pcPunteroMortal = (char *) (32 * 1024 - 1);     *pcPunteroMortal = 1;
 
 
     pvPuntero1 = malloc( 100 );

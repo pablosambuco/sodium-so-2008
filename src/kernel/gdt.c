@@ -99,13 +99,13 @@ int iFnBuscaPosicionProc (unsigned long ulPid) {
 
 
 /**
- * @brief Carga en el descriptor de la GDT indicado la direccion de memoria
- *        base y el limite (sin especificar granularidad)
- * @param uiPosicion Posicion en la GDT del descriptor a modificar
- * @param uiBase Direccion base (lineal)
- * @param uiLimite Longitud (afectado por la granularidad)
- * @returns posicion en la GDT del descriptor
- */
+\brief Carga en el descriptor de la GDT indicado la direccion de memoria base y el limite (sin especificar granularidad)
+\param uiPosicion Posicion en la GDT del descriptor a modificar
+\param uiBase Direccion base (lineal)
+\param uiLimite Longitud (afectado por la granularidad)
+\returns posicion en la GDT del descriptor
+\note Tener en cuenta que, el largo del segmento descripto sera ( (uiLimite+1) * GR). Por ejemplo, con granularidad 4Kb un uiLimite = 0 determina un largo de segmento descripto de ( (0+1) * 4Kb) = 4Kb.
+*/
 unsigned int
 uiFnSetearBaseLimiteDescriptor( int uiPosicion,
                 unsigned int uiBase, 
@@ -627,7 +627,7 @@ int iFnCrearProceso(void* pvInicioBinario,
      * que tiene granularidad 4Kb
      */
     uiFnSetearBaseLimiteDescriptor( uiIndiceGDT_CS, uiBaseSegmento,
-                                    SEGMENT_SIZE / 4096 ); 
+                                    (SEGMENT_SIZE / 4096) - 1 ); 
 
     /* Descriptor de DATOS */
 
@@ -640,7 +640,7 @@ int iFnCrearProceso(void* pvInicioBinario,
      * que tiene granularidad 4Kb
      */
     uiFnSetearBaseLimiteDescriptor( uiIndiceGDT_DS, uiBaseSegmento,
-                                    SEGMENT_SIZE / 4096 );
+                                    (SEGMENT_SIZE / 4096) - 1  );
 
     /* COPIA de CODIGO */ 
 
@@ -733,9 +733,9 @@ int iFnRedimensionarProceso(unsigned long ulPid, unsigned long ulBrk) {
     
     //Actualizamos los descriptores de la GDT (granularidad 4Kb)
     uiFnSetearBaseLimiteDescriptor(pPCB->uiIndiceGDT_CS, ulDirBaseNueva,
-            EN_GRANULARIDAD_4K(ulBrk) );
+            EN_GRANULARIDAD_4K(ulBrk) - 1 );
     uiFnSetearBaseLimiteDescriptor(pPCB->uiIndiceGDT_DS, ulDirBaseNueva,
-            EN_GRANULARIDAD_4K(ulBrk) );
+            EN_GRANULARIDAD_4K(ulBrk) - 1 );
    
     vFnLog("\niFnRedimensionarProceso: Se redimensiono Proceso PID=%d", ulPid);
     return 0;
@@ -809,7 +809,7 @@ int iFnDuplicarProceso( unsigned int uiProcPadre ){
      * que tiene granularidad 4Kb
      */
     uiFnSetearBaseLimiteDescriptor( uiIndiceGDT_CS, uiBaseSegmento,
-                                    SEGMENT_SIZE / 4096 ); 
+                                    (SEGMENT_SIZE / 4096) - 1 ); 
 
     /* Descriptor de DATOS */
 
@@ -822,7 +822,7 @@ int iFnDuplicarProceso( unsigned int uiProcPadre ){
      * que tiene granularidad 4Kb
      */
     uiFnSetearBaseLimiteDescriptor( uiIndiceGDT_DS, uiBaseSegmento,
-                                    SEGMENT_SIZE / 4096 );
+                                    (SEGMENT_SIZE / 4096) - 1 );
 
     /* Copio todo el segmento del proc actual al nuevo */
     ucpFnCopiarMemoria( (unsigned char*)uiBaseSegmento,
@@ -1130,7 +1130,7 @@ int iFnClonarProceso() {
                 stuGdtDescriptorDescs[stuTSSTablaTareas[ulProcActual].ds / 8],
         sizeof( stuGDTDescriptor ) );
     uiFnSetearBaseLimiteDescriptor( uiIndiceGDT_DS, uiBaseSegmento,
-                                    SEGMENT_SIZE / 4096 );
+                                    (SEGMENT_SIZE / 4096) - 1 );
     //vFnImprimir("Copio ds\n");
 
     ucpFnCopiarMemoria( (unsigned char*)uiBaseSegmento, 

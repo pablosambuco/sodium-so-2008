@@ -10,15 +10,13 @@ ARMA_LISTADO:=arma_listado.sh
 #Como es un caso particular... lo calculamos adentro del arma_listado.sh
 #De manera que para el archivo sodium.sys el parametro tam_adicional= no tiene efecto.
 
-#TODO - lala - Volver a poner esto en el listado
-#              '$(DIR_USR)/tst_time.bin',\
-#              '$(DIR_USR)/tst_ptrc.bin',\
-#              '$(DIR_USR)/tst_sgnl.bin',\
-#              '$(DIR_USR)/tst_ipc.bin',\
-
 LIST_PARAMS:= '$(DIR_KERNEL)/sodium.sys: seg=0x7e0 offs=0x0',\
               '$(DIR_USR)/prog.bin',\
               '$(DIR_USR)/init.bin',\
+              '$(DIR_USR)/tst_time.bin',\
+              '$(DIR_USR)/tst_ptrc.bin',\
+              '$(DIR_USR)/tst_sgnl.bin',\
+              '$(DIR_USR)/tst_ipc.bin',\
               '$(DIR_USR)/tst_flt.bin',\
               '$(DIR_USR)/tst_memd.bin',\
               '$(DIR_USR)/p1.bin',\
