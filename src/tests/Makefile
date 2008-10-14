@@ -179,6 +179,9 @@ qemu_cdrom: all iso
 bochs_a: all
 	$(LANZAR_BOCHS)	'$(shell cat $(SODIUM_HDD_CFG))' 'boot: floppy'
 
+bochs_a_gdb: all
+	$(LANZAR_BOCHS)	'gdbstub: enabled=1, port=1234, text_base=0, data_base=0, bss_base=0' '$(shell cat $(SODIUM_HDD_CFG))' 'boot: floppy'
+
 bochs_c: all
 	$(LANZAR_BOCHS)	'$(shell cat $(SODIUM_HDD_CFG))' 'boot: disk'
 
