@@ -4,7 +4,7 @@ int iFnImprimirNumero( const char *, int  );
 
 int main(){
 	int iPid,iStatus,iOpcion;
-	iFnImprimirNumero( "\nSoy el padre, mi pid es ", getpid() );
+	iFnImprimirNumero( "\nPADRE: Soy el padre, mi pid es ", getpid() );
 
 /*
     //Probando limites del segmento: suponiendo que nuestro proceso tiene 32Kb
@@ -20,7 +20,7 @@ int main(){
 
 	iPid = fork();
 	if( !iPid ){
-    	iFnImprimirNumero( "\nSoy el hijo, mi pid es ", getpid() );
+    	iFnImprimirNumero( "\nHIJO: Soy el hijo, mi pid es ", getpid() );
 		/* Ejercicio para el lector: Modificar iOpcion en tiempo de ejecucion, mediante algun debugger primero, y hackeando sodium luego, para que se ejecuten las distintas pruebas */
 		iOpcion = 6;
 		switch(iOpcion)
@@ -40,12 +40,12 @@ int main(){
 			default:
 				iFnImprimirNumero( "\nLa opcion no es valida! ", iStatus );
 		}
-        write(0, "\nSoy el hijo, y ya termine (SALGO CON 1)\n", 0);
+        write(0, "\nHIJO: Soy el hijo, y ya termine (SALGO CON 1)\n", 0);
 		exit(1);
 	}
 	waitpid( iPid, &iStatus, 0);
 	
-	iFnImprimirNumero( "\nMi hijo salio con el estado ", iStatus );
+	iFnImprimirNumero( "\nPADRE: Mi hijo salio con el estado ", iStatus );
 
     exit(0);
 

@@ -273,18 +273,23 @@ long lFnSysKill(int pid, int sig)
     case (SIGFPE):
         //TODO - Realizar tratamiento de la senial
         vFnImprimir(
-            "\nSe recibio SIGFPE (Error en operacion de punto flotante)");
-        //break;
+                "\nSe recibio SIGFPE (Error en operacion de punto flotante)");
+        goto eliminarproceso; //TODO - Cambiar por un tratamiento man apropiado
+	case (SIGSEGV):
+        vFnImprimir("\nSe recibio SIGSEGV en el Proceso PID=%d \"%s\" ",
+                pstuPCB[iPosicionPCB].ulId, pstuPCB[iPosicionPCB].stNombre);
+        goto eliminarproceso; //TODO - Cambiar por un tratamiento man apropiado
 	case (SIGTERM):
 	case (SIGKILL):
+eliminarproceso:
 		/* buscamos al padre para despertarlo, de ser necesario */
 		iPCBPadre = iFnBuscaPosicionProc(pstuPCB[iPosicionPCB].ulParentId);
 		/* forzamos la salida del proceso, dejandolo en estado zombie, y 
-		 * almacenando -1 como valor de salida (valor arbitrario, deberian
+		 * almacenando -10 como valor de salida (valor arbitrario, deberian
 		 * implementarse las macros que separan valores de salida del estado
 		 * de salida forzado por senal) */
 		pstuPCB[iPosicionPCB].iEstado = PROC_ZOMBIE;
-		pstuPCB[iPosicionPCB].iExitStatus = -1;
+		pstuPCB[iPosicionPCB].iExitStatus = -10;
 		/* despertamos al padre, si estaba esperando */
 		if (pstuPCB[iPCBPadre].iEstado == PROC_ESPERANDO) {
 			pstuPCB[iPCBPadre].iEstado = PROC_LISTO;

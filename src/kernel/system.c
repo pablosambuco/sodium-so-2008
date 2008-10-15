@@ -344,7 +344,7 @@ vFnExcepcionCPU12 ()
 
 
 /**
-\brief Atiende la Excepcion de CPU 13 (Excepcion de Proteccion General - Triple Fault)
+\brief Atiende la Excepcion de CPU 13 (Excepcion de Proteccion General)
 \note Esta funcion es llamada por vFnExcepcionCPU13_Asm
 */
 void vFnExcepcionCPU13 () {
@@ -352,37 +352,22 @@ void vFnExcepcionCPU13 () {
    
     iPCBPadre = iFnBuscaPosicionProc(pstuPCB[ulProcActual].ulParentId);
   
-    vFnImprimir("\nViolacion de Segmento (Segmentation Fault)");
+    vFnImprimir("\nExcepcion de Proteccion General (ExcepcionCPU13):");
     vFnMostrarRegistrosvCPU ();
 
-    vFnLog("\nExcepcion de Proteccion General (Triple Fault) (ExcCPU13):");
-    vFnLog(" SEGFAULT del Proceso PID=%d \"%s\" ", pstuPCB[ulProcActual].ulId,
+    vFnLog("\nExcepcion de Proteccion General (ExcepcionCPU13):");
+    vFnLog(" Proceso actual PID=%d \"%s\" ", pstuPCB[ulProcActual].ulId,
             pstuPCB[ulProcActual].stNombre);
-  
-    /* Hacemos que el proceso no ejecute mas (marcandolo como Zombie) y 
-     * despertamos al Padre si lo estaba esperando. Luego llamamos al
-     * planificador para que ejecute otro proceso. Sera el proceso Padre quien
-     * se encargue de eliminar al Hijo (es tarea de la syscal waitpid; si el
-     * Padre no lo espera, el proceso queda Zombie)
-     */
-    pstuPCB[ulProcActual].iEstado = PROC_ZOMBIE;
-    pstuPCB[ulProcActual].iExitStatus = -10; //Valor arbitrario
 
-    /* Si el proceso que hizo SEGFAULT es el Shell, mostramos por la pantalla
-     * estandar estos mensajes, porque es muy probable que el usuario no pueda
-     * ve el LOG
+    /* TODO - Determinar, si es posible, a que se debe la Excepcion (una
+     * violacion de segmento es solo una de las posibles razones) y solo enviar
+     * SIGSEGV si corresponde.
      */
-    if( pstuPCB[ulProcActual].ulId == 1 ) { //Proceso Shell
-        vFnImprimir("\nExcepcion de Proteccion General (Triple Fault) "
-                    "(ExcCPU13):");
-        vFnImprimir(" SEGFAULT del Proceso PID=%d \"%s\" ",
-                pstuPCB[ulProcActual].ulId, pstuPCB[ulProcActual].stNombre);
-        vFnImprimir("\nExcCPU13: Eliminando proceso SHELL. Anda el reloj?");
-    }
 
-    if (pstuPCB[iPCBPadre].iEstado == PROC_ESPERANDO) {
-        pstuPCB[iPCBPadre].iEstado = PROC_LISTO;
-    }
+    /* Enviamos la senal que corresponde a Segmentation Fault al proceso actual
+     * y llamamos al planificador para que retire al proceso actual de la CPU
+     */
+    lFnSysKill( pstuPCB[ulProcActual].ulId, SIGSEGV );  
     vFnPlanificador();
 }
 

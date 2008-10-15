@@ -6,17 +6,26 @@ int main(){
     void * pvPuntero2;
     void * pvPuntero3;
 
+    char * pcBrk;
 
-    //Probando limites del segmento: suponiendo que nuestro proceso tiene 32Kb
-        char * pcPunteroMortal;
-    //Cada uno de estos es una violacion de segmento:
-        //pcPunteroMortal = (char *) (36 * 1024);         *pcPunteroMortal = 1;
-        //pcPunteroMortal = (char *) (36 * 1024 - 1);     *pcPunteroMortal = 1;
-        //pcPunteroMortal = (char *) (32 * 1024);         *pcPunteroMortal = 1;
-    //Esto NO es violacion de segmento:
-        //...pero seguramente ensucia el stack del proceso
-        pcPunteroMortal = (char *) (32 * 1024 - 1);     *pcPunteroMortal = 1;
+    /* Probando limites del segmento */
 
+    /* Obtenemos la direccion de BRK de nuestro segmento. Dicha direccion es la
+     * siguiente a la ultima de nustro segmento, por lo que si intentamos
+     * acceder a una direccion >= BRK obtendremos 'Segmentation Fault'
+     */
+    pcBrk = (char *) sbrk(0);
+
+    // Genera SEGFAULT
+    iFnImprimir_usr("\nIntentando acceder a %d", (int)( pcBrk ) );
+    * pcBrk = 1;
+    // NO Genera SEGFAULT
+    iFnImprimir_usr("\nIntentando acceder a %d", (int)( pcBrk - 1 ) );
+    *( pcBrk - 1 ) = 1;
+
+    /* No se recomienda usar brk/sbrk para cambiar los limites del segmento y a
+     * la vez usar malloc/free/etc, puede causar resultados imprevistos
+     */
 
     pvPuntero1 = malloc( 100 );
     pvPuntero2 = malloc( 200 );

@@ -395,7 +395,6 @@ vFnExcepcionCPU7_Asm:
 	ENTRADA_STACK_KRNL
 
 	call vFnExcepcionCPU7
-	;clts
 
 	SALIDA_STACK_KRNL
 
@@ -409,24 +408,26 @@ vFnExcepcionCPU7_Asm:
 ;* Descripcion: Handler para el manejo de la excepcion 13 (Error de         *
 ;*              Proteccion General (Triple Fault)                           *
 ;*              Ya que es ISR es necesario retornar con IRET, y el GCC no   *
-;*		        dispone de esta facilidad.                                  *
+;*              dispone de esta facilidad.                                  *
 ;* Parametros: Ninguno							                            *
 ;* Valor devuelto: Ninguno						                            *
 ;* Ultima Modificacion: 07-11-2008					                        *
 ;****************************************************************************
 vFnExcepcionCPU13_Asm:
 
-	pushad
-	
-	ENTRADA_STACK_KRNL
+    add esp, 0x04           ;Se recupera el codigo de error (sera 0 o el indice
+                            ;en la GDT de la TSS del proceso que fallo)
+    pushad
 
+    ENTRADA_STACK_KRNL
+    
     call vFnExcepcionCPU13
 
-	SALIDA_STACK_KRNL
+    SALIDA_STACK_KRNL
 
-	popad
-	
-	iret
+    popad
+
+    iret
 
 
 ;****************************************************************************
