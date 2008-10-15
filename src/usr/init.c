@@ -22,7 +22,7 @@ int main(){
 	if( !iPid ){
     	iFnImprimirNumero( "\nHIJO: Soy el hijo, mi pid es ", getpid() );
 		/* Ejercicio para el lector: Modificar iOpcion en tiempo de ejecucion, mediante algun debugger primero, y hackeando sodium luego, para que se ejecuten las distintas pruebas */
-		iOpcion = 6;
+		iOpcion = 4;
 		switch(iOpcion)
 		{
 			case 1: execve( "TST_PTRC.BIN", 0, 0 );
