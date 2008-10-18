@@ -25,7 +25,7 @@ then
       yes | rm bochs-2.3.7.tar.gz
       cd bochs-2.3.7
       echo -n "Configurando "
-      sudo sh ./configure --with-x --enable-show-ips --enable-debugger --enable-readline --enable-disasm --enable-idle-hack 1>>${LOG} 2>>${ERROR} 
+      sudo sh ./configure --with-x --enable-show-ips --enable-gdb-stub --enable-readline --enable-disasm --enable-idle-hack 1>>${LOG} 2>>${ERROR} 
       if test $? -eq 0 
       then
          echo  "OK"
@@ -35,6 +35,8 @@ then
          then
             echo "OK"
             rm ${LOG} ${ERROR}
+            cd ..
+            yes | rm -r bochs-2.3.7
          else 
             echo "ERROR"
          fi
@@ -47,8 +49,7 @@ then
 else
    echo "ERROR"
 fi
-cd ..
-yes | rm -r bochs-2.3.7 
+
 echo -n "Instalando paquetes extra "
 sudo apt-get install --force-yes vgabios 1>>${LOG} 2>>${ERROR} 
 if test $? -eq 0
