@@ -11,7 +11,7 @@ CFLAGCHK_SH="./herramientas/cflag_chk.sh"
 
 
 # Listado de binarios necesarios y deseables
-HERRAMIENTAS_NECESARIAS="gcc ld nasm nm make cat wc dd sh mount objcopy objdump hexdump sed awk makedepend"
+HERRAMIENTAS_NECESARIAS="gcc ld nasm nm make cat wc dd sh mount objcopy objdump hexdump sed awk"
 HERRAMIENTAS_DESEABLES_TEST="sfdisk parted qemu bochs bximage gdb mkfs.vfat mkisofs"
 HERRAMIENTAS_DESEABLES_DOCS="doxygen dot"
 HERRAMIENTAS_DESEABLES_ED="ctags indent diff vim"

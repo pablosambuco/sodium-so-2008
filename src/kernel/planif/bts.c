@@ -28,6 +28,29 @@ void vFnPlanificadorBTS ()
     int flag = 0;
     //ulProcesoSeleccionado se puede cambiar por ulProcActual para optimizar,
 
+    unsigned short int bInterrupcionesHabilitadas = 0;
+    int iFlags;
+
+    /* 16/10/2008 - Se agrega la deshablitacion de interrupciones
+     *
+     * Si no se deshabiltian las interrupciones, puede darse el caso en que
+     * mientras se ejecuta el planificador, se presente una interrupcion que
+     * tambien llame al planificador. Ambos planificadores llamaran intentaran
+     * poner en ejecucion a la misma tarea; cuando el segundo de ellos lo haga, 
+     * causara una Excepcion de Proteccion General, por querer ejecutar una
+     * tarea marcada como ocupada.
+     * Al deshabilitar las interrupciones se evitan estos problemas.
+     */
+
+    //Deshabilitacion de interrupciones
+    __asm__ ("pushf\n pop %%eax": "=a" (iFlags):);
+    // si estaban habilitadas, aqui se deshabilitan
+    if (iFlags & 0x200){
+        __asm__ ("cli"::);
+        bInterrupcionesHabilitadas = 1;
+    }
+
+
     //por ahora dejo esta variable por si la otra desaparece o la toketean
     //Pongo el proceso actual de ejecucion a listo (si se lo merece)
 
@@ -133,45 +156,13 @@ void vFnPlanificadorBTS ()
             uiVectorDescriptorAuxiliarTarea[1] =
                 pstuPCB[ulProcesoSeleccionado].uiIndiceGDT_TSS * 8;
 
-
-
-
-/* PARCHE 13/10/2008 */
-/* Al parecer, a veces se presenta la situacion en la que dos hilos de ejecucion
- * del kernel invocan a esta funcion, en la forma de una condicion de carrera,
- * volviendo inestable al sistema.
- *
- * Se observo que cuando se esta ejecutando esta funcion (la llamaremos
- * planificador1) sin que halla sido la interrupcion del reloj del sistema la
- * que causo su invocacion, se puede producir una interrupcion del reloj, la
- * cual, si es mas prioritaria que la tarea actual, se atendera inmediatamente.
- * La rutina de atencion del reloj podra llamar a esta funcion (la llamaremos
- * planificador2), pasando la proxima tarea LISTA a EJECUTANDO. Cuando la
- * ejecucion vuelva a planificador1, si esta ya habia seleccionado el proceso
- * para pasar a EJECUTANDO (el cual sera el mismo si el algoritmo del
- * planificador es deterministico), se intentara poner en ejecucion un proceso
- * que ya esta ejecutando (bit BUSY de la TSS del proceso en 1), generando una
- * GPE (Excepcion de Proteccion General, 13).
- *
- * Nuestro parche consite en poner en 0 el bit BUSY de la TSS del proceso al que
- * saltemos (no importando como estaba antes).
- *
- * TODO: IMPLEMENTAR UNA BUENA SOLUCION
- * ESTA NO ES LA SOLUCION OPTIMA, solamente es un parche (mejor seria evitar las
- * condiciones de carrera en la invocacion del planificador)
- */
-
-// Ponemos el NOVENO bit del SEGUNDO DOUBLE-WORD la TSS del nuevo proceso (BUSY)
-// EN 0 (no-ocupado)
-*( (long int*) (& ( pstuTablaGdt->stuGdtDescriptorDescs[
-                            pstuPCB[staiN].uiIndiceGDT_TSS] ) ) + 1 ) &=
-                                                                    0xFFFFFDFF; 
-/* FIN PARCHE 13/10/2008 */
-
-
-
             asm ("clts\t\n" "ljmp *%0": :"m"(*uiVectorDescriptorAuxiliarTarea));
         }
     }
+
+    //Habilitacion de interrupciones
+    //Si estaban habilitadas, se vuelven a habilitar
+    if (bInterrupcionesHabilitadas)
+      __asm__ ("sti"::);
 }
 //************ Fin agregado ****************//

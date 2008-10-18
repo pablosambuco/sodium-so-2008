@@ -101,7 +101,7 @@ tst_%.bin: tst_%.o libsodium.o
 	objcopy -R .comment -R .note -S -O binary tst_$*.ld $@
 
 %.o: %.c
-	$(MAKEDEPEND) -- $(CFLAGS) $^
+#	$(MAKEDEPEND) -a -- $(CFLAGS) $^
 	$(CC) $(CFLAGS) -c $<
 
 %.o: %.asm
@@ -114,6 +114,101 @@ tst_%.bin: tst_%.o libsodium.o
 # NO EDITAR EL MAKEFILE POR DEBAJO DE ESTA LINEA, SE MODIFICA AUTOMATICAMENTE
 # NO SACAR LA LINEA ESCRITA EN INGLES, MARCA EL INICIO DE LO QUE MAKEDEPEND TOCA
 # DO NOT DELETE THIS LINE -- make depend depends on it.
+
+p1.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+p1.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+p1.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+p1.o: ../include/kernel/definiciones.h ../include/usr/memoria_dinamica.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/memoria_dinamica.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+
+reloj.o: ../include/usr/reloj.h ../include/kernel/puertos.h
+reloj.o: ../include/kernel/definiciones.h ../include/video.h
+reloj.o: ../include/kernel/libk/string.h ../include/kernel/tiempo.h
+
+idle.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+idle.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+idle.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+idle.o: ../include/kernel/definiciones.h ../include/usr/memoria_dinamica.h
+
+sodstdio.o: ../include/usr/sodstdio.h ../include/usr/libsodium.h
+sodstdio.o: ../include/kernel/syscall.h ../include/kernel/signal.h
+sodstdio.o: ../include/kernel/semaforo.h ../include/kernel/shm.h
+sodstdio.o: ../include/kernel/tiempo.h ../include/kernel/definiciones.h
+sodstdio.o: ../include/usr/memoria_dinamica.h ../include/usr/sodstdlib.h
+
+sodstd.o: ../include/usr/sodstd.h ../include/usr/libsodium.h
+sodstd.o: ../include/kernel/syscall.h ../include/kernel/signal.h
+sodstd.o: ../include/kernel/semaforo.h ../include/kernel/shm.h
+sodstd.o: ../include/kernel/tiempo.h ../include/kernel/definiciones.h
+sodstd.o: ../include/usr/memoria_dinamica.h
+
+sodstdlib.o: ../include/usr/sodstdlib.h
+
+sodstring.o: ../include/usr/sodstring.h
+
+memoria_dinamica.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+memoria_dinamica.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+memoria_dinamica.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+memoria_dinamica.o: ../include/kernel/definiciones.h
+memoria_dinamica.o: ../include/usr/memoria_dinamica.h
+memoria_dinamica.o: ../include/usr/sodstdio.h
+
+init.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+init.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+init.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+init.o: ../include/kernel/definiciones.h ../include/usr/memoria_dinamica.h
+
+tst_ptrc.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+tst_ptrc.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+tst_ptrc.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+tst_ptrc.o: ../include/kernel/definiciones.h
+tst_ptrc.o: ../include/usr/memoria_dinamica.h
+
+tst_sgnl.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+tst_sgnl.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+tst_sgnl.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+tst_sgnl.o: ../include/kernel/definiciones.h
+tst_sgnl.o: ../include/usr/memoria_dinamica.h
+
+tst_ipc.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+tst_ipc.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+tst_ipc.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+tst_ipc.o: ../include/kernel/definiciones.h ../include/usr/memoria_dinamica.h
+
+tst_time.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+tst_time.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+tst_time.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+tst_time.o: ../include/kernel/definiciones.h
+tst_time.o: ../include/usr/memoria_dinamica.h
+
+tst_flt.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+tst_flt.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+tst_flt.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+tst_flt.o: ../include/kernel/definiciones.h ../include/usr/memoria_dinamica.h
+tst_flt.o: ../include/usr/sodstdio.h
+
+tst_memd.o: ../include/usr/sodstdio.h ../include/usr/libsodium.h
+tst_memd.o: ../include/kernel/syscall.h ../include/kernel/signal.h
+tst_memd.o: ../include/kernel/semaforo.h ../include/kernel/shm.h
+tst_memd.o: ../include/kernel/tiempo.h ../include/kernel/definiciones.h
+tst_memd.o: ../include/usr/memoria_dinamica.h
+
+prog.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+prog.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+prog.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+prog.o: ../include/kernel/definiciones.h ../include/usr/memoria_dinamica.h
 
 p1.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
 p1.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
