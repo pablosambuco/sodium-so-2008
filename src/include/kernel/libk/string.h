@@ -32,5 +32,7 @@ char * pstFnCadenaIzquierda (char * , int );
 char * pstFnCadenaDerecha (char * , int );
 int iFnEsNumero (char * stCadena);
 
+void vFnStrLwr (char * stCadena);
+void vFnStrUpr (char * stCadena);
 #endif
 

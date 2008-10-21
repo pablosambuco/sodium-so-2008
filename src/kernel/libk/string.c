@@ -494,3 +494,33 @@ iFnEsNumero (char * stCadena)
 	}
 	return (0);	
 }
+
+/**
+ * vFnStrLwr : convierte una cadena a minusculas
+ * @param stCadena cadena a convertir a minusculas
+ */
+void vFnStrLwr(char *stCadena) 
+{   
+    //Recorremos la cadena
+    while(*stCadena != 0)
+    {   //Si es mayuscula, la convertimos
+        if(*stCadena >= 'A' && *stCadena <= 'Z')
+           *stCadena+='a'-'A';
+        stCadena++;
+    }
+}
+
+/**
+ * vFnStrUpr : convierte una cadena a mayusculas
+ * @param stCadena cadena a convertir a mayusculas
+ */
+void vFnStrUpr(char *stCadena) 
+{   
+    //Recorremos la cadena
+    while(*stCadena != 0)
+    {   //Si es minuscula, la convertimos
+        if(*stCadena >= 'a' && *stCadena <= 'z')
+           *stCadena+='A'-'a';
+        stCadena++;
+    }
+}
