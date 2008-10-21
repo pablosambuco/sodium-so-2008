@@ -242,14 +242,22 @@ Recibe:
 Devuelve: 
 *******************************************************************************/
 int sem_init( sem_t *sem, int pshared, unsigned int value ){
-
-	sem_init_params  * params;
+    /* 21/10/2008
+     * Se declaraba params como un puntero y no se inicializaba, generando un
+     * SEGFAULT.
+     * Agregamos el puntero paux porque la macro de syscall no esta preparada
+     * para recibir &params
+     */
+	//sem_init_params  * params;
+	sem_init_params params, *paux;
 	long liRetorno;
-	params->pshared = pshared;
-	params->value = value;
+	params.pshared = pshared;
+	params.value = value;
 
-	//SYS_CALL_3( liRetorno, errno, __NR_seminit, sem, pshared, value);
-	SYS_CALL_2( liRetorno, errno, __NR_seminit, sem, params);
+    paux = &params;
+
+	SYS_CALL_2( liRetorno, errno, __NR_seminit, sem, paux );
+
 	return liRetorno;
 }
 /******************************************************************************

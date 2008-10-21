@@ -128,6 +128,15 @@ int iFnShmAt(int shmid, void * shmAddr)
         return -1;
     }
 
+    /* 18/10/2008
+     * Verificamos que la memoria compartida entre completamente en el segmento
+     * del proceso
+     */
+    if( (char * )shmAddr + memoriasCompartidas[shmid].tamanio >=
+            (char *)pstuPCB[ulProcActual].uiLimite ) {
+        return -1;
+    }
+
     //TODO - Mejorar estos comentarios:
     // aca en teoria puedo agregar
 
@@ -184,13 +193,31 @@ int iFnShmAt(int shmid, void * shmAddr)
 
 
 /**
-\brief Des-adjunta un 'segmento' de memoria compartida
+\brief Des-adjunta un 'segmento' de memoria compartida del proceso actual
 \param shmid Identificador de la memoria compartida (SHMID)
 \returns Si hubo exito, devuelve 0; si hubo error, devuelve -1
 */
 int iFnShmDt(int shmid){
-    int i;
+    return iFnShmDtProc(shmid, pstuPCB[ulProcActual].ulId);
+}
+
+
+/**
+\brief Des-adjunta un 'segmento' de memoria compartida de un proceso dado
+\param shmid Identificador de la memoria compartida (SHMID)
+\param uiPid PID del proceso
+\returns Si hubo exito, devuelve 0; si hubo error, devuelve -1
+*/
+int iFnShmDtProc(int shmid, unsigned int uiPid) {
+    int i, j;
     bool desocuparShm = TRUE;
+    unsigned long ulPosProc;
+
+    ulPosProc = iFnBuscaPosicionProc(uiPid);
+
+    if( ulPosProc == -1 ) {
+        return -1;
+    }
 
     if( shmid >= CANTMAXSHM ) {
         return -1;
@@ -198,9 +225,16 @@ int iFnShmDt(int shmid){
 
     for(i=0;i<CANTMAXPROCSHM;i++)
     {
-        if(memoriasCompartidas[shmid].procAtt[i].pid == pstuPCB[ulProcActual].ulId)
+        if(memoriasCompartidas[shmid].procAtt[i].pid == uiPid)
         {
             memoriasCompartidas[shmid].procAtt[i].pid = -1;
+
+            //Quito la entrada en el PCB del proceso
+            for(j=0; j<MAXSHMEMPORPROCESO; j++) {
+                if(pstuPCB[ulPosProc].memoriasAtachadas[j].posicionEnShMem == shmid) {
+                    pstuPCB[ulPosProc].memoriasAtachadas[j].utilizada = FALSE;
+                }
+            }
         } 
         else if(memoriasCompartidas[shmid].procAtt[i].pid != -1)
         {
@@ -219,6 +253,67 @@ int iFnShmDt(int shmid){
     }
 
     return 0;
+}
+
+
+/**
+\brief Des-adjunta todos los 'segmentos' de memoria compartida de un proceso dado
+\param uiProcId PID del proceso
+\returns Si hubo exito, devuelve 0; si hubo error, devuelve -1
+*/
+int iFnShmDtAllProc(unsigned int uiPid) {
+    int i;
+    unsigned long ulPosProc;
+
+    ulPosProc = iFnBuscaPosicionProc(uiPid);
+
+    if( ulPosProc == -1 ) {
+        return -1;
+    }
+
+    for(i=0; i<MAXSHMEMPORPROCESO; i++) {
+        if( pstuPCB[ulPosProc].memoriasAtachadas[i].utilizada == TRUE ) {
+            iFnShmDtProc(pstuPCB[ulPosProc].memoriasAtachadas[i].posicionEnShMem, uiPid);
+        }
+    }
+
+    return 0;
+}
+
+
+/**
+\brief Devuelve la direccion mas alta de memoria compartida del proceso dado
+\param uiPid PID del proceso
+\returns Direccion mas alta de memoria compartida del proceso, o 0 si no tiene memorias compartidas atachadas
+*/
+unsigned long ulFnMaxDirShmProc(unsigned int uiPid) {
+    int i;
+    int iPosProc;
+    int shmid;
+    int iPosEnAtt;
+    unsigned long ulMaxDir;
+
+    iPosProc = iFnBuscaPosicionProc(uiPid);
+
+    if( iPosProc == -1 ) {
+        return -1;
+    }
+
+    ulMaxDir = 0;
+    for(i=0; i<MAXSHMEMPORPROCESO; i++) {
+        if( pstuPCB[iPosProc].memoriasAtachadas[i].utilizada == TRUE ) {
+            shmid = pstuPCB[iPosProc].memoriasAtachadas[i].posicionEnShMem;
+            iPosEnAtt= pstuPCB[iPosProc].memoriasAtachadas[i].posicionEnAttach;
+            if(((char*)memoriasCompartidas[shmid].procAtt[iPosEnAtt].ptrShAddr +
+                memoriasCompartidas[shmid].tamanio) > (char*)ulMaxDir) {
+                ulMaxDir = (unsigned long)(char*)
+                    memoriasCompartidas[shmid].procAtt[iPosEnAtt].ptrShAddr +
+                    memoriasCompartidas[shmid].tamanio;
+            }
+        }
+    }
+
+    return ulMaxDir;
 }
 
 

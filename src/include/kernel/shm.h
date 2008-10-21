@@ -57,6 +57,11 @@ int iFnShmAt(int shmid, void * shmAddr);
 /** \sa int shmdt(const void *shmaddr);*/
 int iFnShmDt(int shmid);
 
+int iFnShmDtProc(int shmid, unsigned int uiPid);
+int iFnShmDtAllProc(unsigned int uiPid);
+
+unsigned long ulFnMaxDirShmProc(unsigned int uiPid);
+
 void vFnInicializarShms();
 void vFnVerShm();
 

@@ -350,8 +350,6 @@ vFnExcepcionCPU12 ()
 void vFnExcepcionCPU13 () {
     int iPCBPadre;
    
-    iPCBPadre = iFnBuscaPosicionProc(pstuPCB[ulProcActual].ulParentId);
-  
     vFnImprimir("\nExcepcion de Proteccion General (ExcepcionCPU13):");
     vFnMostrarRegistrosvCPU ();
 

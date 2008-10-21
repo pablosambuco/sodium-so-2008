@@ -25,61 +25,49 @@
 #define D_PRESENT	0x8000	/*!< Presente (indica si esta cargado en memoria) */
 #define D_NOT_PRESENT	0x8000	/*! No Presente (lo recíproco) */
 #define D_BIG		0x40    /*! Modo por defecto para 32 bits   */
+#define D_4KB		0x80    /*! Granularidad 4Kb */
 
-stuPCB pstuPCB[CANTMAXPROCS]; /*!<Vector de procesos del sistema (deberia ser una cola, pero por ahora no) */
+/*! PARA SEGMENTOS DE DATOS */
+#define D_WRITE		0x200    /*! Escritura habilitada */
+
+/*! PARA SEGMENTOS DE CODIGO */
+#define D_READ		0x200    /*! Lectura habilitada */
 
 /**
 	\note Se usa el atributo NOALIGN para que el compilador no deje espacios intermedios 
 	entre los campos de la estructura, o asigne 4 bytes donde sólo le pedimos 1 
 */
 typedef struct {
-  unsigned short usLimiteBajo;    /*!< limite bajo 0..15   */
-  unsigned short usBaseBajo;      /*!< base bajo 0..15     */
-  unsigned char ucBaseMedio;      /*!< base media 16..23   */
-	/**
-	*	\note (es 1 byte que contiene Type (bits 8-11)indica si el descriptor 
-	*	es de codigo, de datos o de sistema, Bit 'S' que indica con cero si el descriptor
-	*	es de sistema o con uno, si es de codigo o de datos.
-	*	\note DPL (Define nivel de previlegio del segmento. y el bit 'P' indica si el 
-	*	segmento está en memoria principal o no 
-	*/
-	unsigned char ucAcesso;         /*! byte de acceso*/
+    unsigned short usLimiteBajo;    /*!< limite bajo 0..15   */
+    unsigned short usBaseBajo;      /*!< base bajo 0..15     */
+    unsigned char ucBaseMedio;      /*!< base media 16..23   */
+    /**
+    \note (es 1 byte que contiene Type (bits 8-11) indica si el descriptor es de codigo, de datos o de sistema, Bit 'S' que indica con cero si el descriptor es de sistema o con uno, si es de codigo o de datos. DPL (Define nivel de previlegio del segmento. y el bit 'P' indica si el segmento está en memoria principal o no 
+    */
+    unsigned char ucAcesso;         /*! byte de acceso*/
+    unsigned int bitLimiteAlto:4;   /*!< limite alto 16..19   */
 
-  unsigned int bitLimiteAlto:4;    /*!< limite alto 16..19   */
-
-  /**
-	
-	\note granularidad que contiene: AVL 2 bits el numero 20 diponibles y reservado para 
-	software de sistema, el bit 21 deberia ser siempre cero.
-    D/B especifica distintas opciones segun sea el segmento de codigo,de stack o de 
-	datos. G Banderita de granularidad de 1 
-	bit que determina si el limite del 
-	segmento se especifica de a un Byte o de a 4 KByte.
-	
-  */
-	
-	unsigned int bitGranularidad:4;  
-
-  unsigned char usBaseAlto;        /*!< base alto24..31    */
+    /**
+    \note granularidad que contiene: AVL 2 bits el numero 20 diponibles y reservado para software de sistema, el bit 21 deberia ser siempre cero. D/B especifica distintas opciones segun sea el segmento de codigo,de stack o de datos. G Banderita de granularidad de 1 bit que determina si el limite del segmento se especifica de a un Byte o de a 4 KByte.
+    */
+    unsigned int bitGranularidad:4;  
+    unsigned char usBaseAlto;       /*!< base alto24..31    */
 
 } NOALIGN stuGDTDescriptor;        
 
 
 /**
  \brief Estructura que mantiene la GDT
-
 */
 typedef struct {
-   stuGDTDescriptor stuGdtDescriptorDescs[8192]; /*!< Vector de posiciones de la GDT*/
+    stuGDTDescriptor stuGdtDescriptorDescs[8192]; /*!< Vector descriptores GDT*/
 } stuEstructuraGdt;
 
 stuEstructuraGdt *pstuTablaGdt; /*!< puntero a la GDT */
 
 
 /** 
-*  \brief Definicion y estructura de registros del FPU.
-*  
-*  Contiene los registros del FPU en el orden en que se usan en "fsave" y "frstor"
+*  \brief Definicion y estructura de registros del FPU. Contiene los registros del FPU en el orden en que se usan en "fsave" y "frstor"
 */
 typedef struct {
   unsigned int control;	//Control word
@@ -91,6 +79,7 @@ typedef struct {
   unsigned int ds;		//Data selector
   u80 st[8]; 			//Pila:	8 registros de 80 bits 
 } NOALIGN stuFpu;
+
 
 /** 
 *  \brief Definicion y estructura de la TSS.
@@ -131,7 +120,26 @@ typedef struct {
   char         espacio2[TSS_TAMANIO_STACK_R2];
   stuFpu fpu; //estructura de registros del FPU
 }stuTSS;
-  
+
+
+typedef struct {          
+    void * pvPuntoCarga;
+    unsigned int uiTamanioTexto;
+    unsigned int uiTamanioDatosInicializados;
+    unsigned int uiTamanioStack;
+    char stNombre [13];
+} stuInfoEjecutable;
+
+
+
+#define TOTAL_ENTRADAS_GDT (sizeof(stuEstructuraGdt) / sizeof(stuGDTDescriptor))
+
+
+
+stuPCB pstuPCB[CANTMAXPROCS]; /*!<Vector de procesos del sistema (deberia ser una cola, pero por ahora no) */
+stuTSS stuTSSTablaTareas[CANTMAXPROCS]; /*!<Vector de TSS del sistema (deberia ser una cola, pero por ahora no) */
+
+
 void vFnGdtInicializar(dword);
 
 int iFnBuscaPosicionProc(unsigned long);
@@ -145,18 +153,20 @@ unsigned int uiFnBuscarEntradaGDTLibre();
 int iFnCrearTSSTareaEspecial (void*,int,unsigned int,unsigned int,unsigned int);
 int iFnCrearTSS (void*,void*,int,unsigned int,unsigned int,unsigned int);
 
-int iFnCrearPCB(int,void*,char*,unsigned int,unsigned int,unsigned int,unsigned int,unsigned int,unsigned int );
+int iFnCrearPCB(int,void*,char*,unsigned int,unsigned int,unsigned int,unsigned int,unsigned int,unsigned int,unsigned int,unsigned int, unsigned int);
 
 int iFnNuevaTareaEspecial(void *, char*);
 int iFnInstanciarIdle();
 int iFnInstanciarInit();
 
-int iFnCrearProceso();
+int iFnLeerCabeceraEjecutable(char* stArchivo, stuInfoEjecutable* pstuInfo);
+
+int iFnCrearProceso(char *);
 int iFnRedimensionarProceso(unsigned long ulPid, unsigned long ulBrk);
 
 int iFnDuplicarProceso(unsigned int uiProcPadre); /*!< devuelve el indice de PCB/TSS del proceso nuevo */
 int iFnEliminarProceso(unsigned int uiProcesp); /*!< elimina todos los recursos usados por el proceso */
-int iFnReemplazarProceso( unsigned int uiProceso, unsigned char *__codigo, unsigned int size );
+int iFnReemplazarProceso(unsigned long, char *);
 int iFnClonarProceso();
 
 #endif //GDT_H

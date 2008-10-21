@@ -202,7 +202,8 @@ long lFnSysExecve(const char *filename, char *const argv[],
 	stDirectorio *pstDirBusqueda;
 	char* strNombreArchivo =(char*)((unsigned int)pstuPCB[ulProcActual].uiDirBase + (unsigned int)filename);
 
-	if (iFnObtenerDirectorio("/mnt/usr", &pstDirBusqueda) < 0) {
+/* TODO - lala - Terminar de sacar
+    if (iFnObtenerDirectorio("/mnt/usr", &pstDirBusqueda) < 0) {
 		vFnImprimir
 		    ("\nSodium Dice: Error! El directorio no existe");
 		return -ENOENT;
@@ -217,8 +218,10 @@ long lFnSysExecve(const char *filename, char *const argv[],
 	iFnReemplazarProceso(ulProcActual,
 			     (unsigned char*) DIR_LINEAL(pstEntLs->wSeg, pstEntLs->wOff), 
 			     pstEntLs->dwTamanio);
-
+*/
 //      iFnReemplazarProceso( ulProcActual, __prog_begin(), __prog_size() );
+
+      iFnReemplazarProceso( pstuPCB[ulProcActual].ulId, strNombreArchivo );
 
 	return 0;
 }
@@ -350,6 +353,7 @@ Devuelve:
 //long lFnSysSemInit( sem_t *sem, int pshared, unsigned int value ){
 long lFnSysSemInit( sem_t *sem, sem_init_params * params ){
 	params = (sem_init_params *)(pstuPCB[ ulProcActual ].uiDirBase + (unsigned int)params);
+
 	return iFnSemInit(sem, params->pshared, params->value);
 }
 /******************************************************************************

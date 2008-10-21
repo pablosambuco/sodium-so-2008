@@ -85,7 +85,7 @@ main ()
 
   if (uiModoMemoria == MODOPAGINADO)
     vFnIniciarMapaBits (ulMemoriaBase, ulMemoriaTope);	//Paginado
-/* TODO lala Revisar
+/* La memoria segmentada ya no se simula, por lo que no hace falta esto:
     else
     vFnParticionarMemoria ();	//Segmentado
  */

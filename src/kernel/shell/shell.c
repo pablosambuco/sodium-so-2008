@@ -448,6 +448,10 @@ void vFnShell()
 		vFnMenuDump(iComandoPos);
 	}
 	/////////////////////////////////////////////////////////////////////////////
+	else if ((iComandoPos = iFnEsCmdShell("ejecutar")) >= 0) {
+		vFnMenuEjecutar(iComandoPos);
+	}
+	/////////////////////////////////////////////////////////////////////////////
 	else if ((iComandoPos = iFnEsCmdShell("stack")) >= 0) {
 		vFnMenuStack(iComandoPos);
 	}
@@ -844,7 +848,6 @@ void vFnMenuInstanciarInit()
 	
     uiPosicion = iFnInstanciarInit();
 
-    //TODO - lala Revisar si esto es correcto
     //Esperamos a Init, asi no queda zombie, y ademas, lFnSysWaitPid se encarga
     //de eliminar el segmento del proceso hijo, por lo que no perdemos memoria
     lRetorno = lFnSysWaitPid( pstuPCB[uiPosicion].ulId, &iStatus, 0 );
@@ -1742,15 +1745,49 @@ void vFnMenuPag(int iComandoPos)
 
 
 /**
+\brief Lanza un proceso de usuario a partir de un archivo ejecutable
+\param iComandoPos Posición inicial del comando en el buffer de cCaracteres. Con esta información se podrán recuperar los parámetros pasados desde la línea de comandos.
+\date 21/10/2008
+*/
+void vFnMenuEjecutar(int iComandoPos) {
+	char stArg1[12];
+    char * pstNombreArchivo;
+    int iPosicion;
+    int iStatus;
+    long lRetorno;
+
+	if ((iFnGetArg(iComandoPos, 1, stArg1, 11) == 1)){
+        //Pasamos el nombre a mayusculas (cambiar si Sodium es case-sensitive)
+        vFnStrUpr(stArg1);
+        pstNombreArchivo = pstFnConcatenarCadena(stArg1,".BIN");
+
+        //Creamos el proceso
+        iPosicion = iFnCrearProceso( pstNombreArchivo );
+
+        if(iPosicion < 0) {
+            vFnImprimir("\nNo se pudo crear un proceso a partir de %s",
+                    pstNombreArchivo);
+            return;
+        }
+
+        //Y lo esperamos para que no quede zombie
+        lRetorno = lFnSysWaitPid( pstuPCB[iPosicion].ulId, &iStatus, 0 );
+    } else {
+		vFnSysSetearColor(HWND_COMANDO, BLANCO_BRILLANTE);
+        vFnImprimir("\nAyuda del comando ejecutar:\n");
+		vFnSysSetearColor(HWND_COMANDO, BLANCO);
+        vFnImprimir("Forma de uso: Cmd>ejecutar ARCHIVO");
+        vFnImprimir("\nDonde ARCHIVO es el nombre del archivo a ejecutar "
+                    "omitiendo la extension .BIN");
+    }
+}
+
+
+/**
 \fn void vFnMenuExec(int iComandoPos)
-\brief Lanza un proceso de sistema o de usuario y le reserva la cantidad
-de paginas necesarias según el tamaño declarado por línea de
-comando. Si no hay espacio suficiente o no se pueden alocar más
-procesos lo indicará con un mensaje de error.
-\param iComandoPos Posición inicial del comando en el buffer de cCaracteres. 
-Con esta información se podrán recuperar los parámetros pasados desde la
-línea de comandos.
-\date09/04/2006
+\brief Lanza un proceso de sistema o de usuario y le reserva la cantidad de paginas necesarias según el tamaño declarado por línea de comando. Si no hay espacio suficiente o no se pueden alocar más procesos lo indicará con un mensaje de error.
+\param iComandoPos Posición inicial del comando en el buffer de cCaracteres. Con esta información se podrán recuperar los parámetros pasados desde la línea de comandos.
+\date 09/04/2006
 */
 void vFnMenuExec(int iComandoPos)
 {				//1
@@ -2027,7 +2064,7 @@ void vFnMenuKillSeg(int iComandoPos)
                      * que los procesos creados con iFnNuevaTareaEspecial usan
                      * como Stack parte de su TSS (espacio0, espacio1, etc).
                      */
-                    vFnKFree( pstuPCB[iProcPos].uiDirBase );
+                    vFnKFree( (void*)pstuPCB[iProcPos].uiDirBase );
                     pstuPCB[iProcPos].iEstado = PROC_ELIMINADO;
                     vFnImprimir("\n OK, PID=%d, POS=%d, ESTADO=%d",
                                  pstuPCB[iProcPos].ulId, iProcPos,

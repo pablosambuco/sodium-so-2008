@@ -9,25 +9,24 @@
 #include <kernel/libk/string.h>
 #include <kernel/shm.h>
 
+#include <fs/ramfs.h>
+
 #include <kernel/mem/memoria_s.h>
 
 extern dword pdwGDT;
+extern stuPCB pstuPCB[CANTMAXPROCS];
+extern stuTSS stuTSSTablaTareas[CANTMAXPROCS];
 
 unsigned int uiUltimoPid = 0;
 unsigned long ulProcActual = 0;
 unsigned long ulUltimoProcesoEnFPU = 0; //PID del ultimo proceso que uso el FPU
 
-//stuPCB pstuPCB[CANTMAXPROCS];
-stuTSS stuTSSTablaTareas[CANTMAXPROCS];
-
-#define TOTAL_ENTRADAS_GDT (sizeof(stuEstructuraGdt) / sizeof(stuGDTDescriptor))
-
 unsigned char iMapaGDT[ TOTAL_ENTRADAS_GDT / 8 ]; 
 
-//TODO - lala Limpiar
-//#define SEGMENT_SIZE    0x20000 // 128 Kb
-#define SEGMENT_SIZE    0x08000 // 32 Kb
-//#define SEGMENT_SIZE    0x00800 // 2 Kb //Init no entra en 2Kb y explota!
+
+#define MAX_MEMORIA_PROCESO 0x4000000   // 64 Mb
+#define STACK_SIZE      0x01000 // 4 Kb - TODO: Revisar si es un valor aceptable
+
 
 #define _SET_BIT( bitmap, pos, set )                     \
     do{                                \
@@ -50,6 +49,7 @@ unsigned char iMapaGDT[ TOTAL_ENTRADAS_GDT / 8 ];
 #define REDONDEAR_HACIA_ARRIBA_A_4K( x ) \
                 ( EN_GRANULARIDAD_1B( EN_GRANULARIDAD_4K (x) ) )
 
+
 /**
  * @brief Inicializa la GDT y la tabla de PCBs
  * @param Puntero a la GDT
@@ -70,9 +70,8 @@ void vFnGdtInicializar (dword pdwGDT) {
     /* Inicialización de tabla de PCBs */
 
     for (iN = 0; iN < CANTMAXPROCS; iN++) {
-      pstuPCB[iN].iEstado = PROC_NO_DEFINIDO;
+        pstuPCB[iN].iEstado = PROC_NO_DEFINIDO;
     }
-
 }
 
 
@@ -143,7 +142,7 @@ uiFnAgregarDescriptorGDT (
 {
     uiFnSetearBaseLimiteDescriptor( uiPosicion, uiBase, uiLimite );
     pstuTablaGdt->stuGdtDescriptorDescs[uiPosicion].ucAcesso =
-        (uiOpt + D_PRESENT) >> 8;
+        (uiOpt | D_PRESENT) >> 8;
     pstuTablaGdt->stuGdtDescriptorDescs[uiPosicion].bitGranularidad =
         ((uiOpt & 0xff) >> 4);
   
@@ -407,7 +406,10 @@ int iFnCrearPCB( int iPosicion,
          unsigned int uiIndiceGDT_TSS,
          unsigned int uiPosTSS,
          unsigned int uiDirBase,
-         unsigned int uiLimite )
+         unsigned int uiLimite,
+         unsigned int uiTamanioTexto,
+         unsigned int uiTamanioDatosInicializados,
+         unsigned int uiTamanioStack)
 {
     int iN;
     int iJ;
@@ -445,7 +447,7 @@ int iFnCrearPCB( int iPosicion,
     pstuPCB[iPosicion].uiTamProc    = uiLimite;
     pstuPCB[iPosicion].lPidTracer   = PROC_WOTRACER;
 
-    for (iN = 0; iN < 12; iN++) {
+    for (iN = 0; iN < 11; iN++) {
         pstuPCB[iPosicion].stNombre[iN] = stNombre[iN];
     }
 
@@ -460,7 +462,13 @@ int iFnCrearPCB( int iPosicion,
     for (iJ = 0; iJ < MAXSHMEMPORPROCESO; iJ ++) {
         pstuPCB[iPosicion].memoriasAtachadas[iJ].utilizada = FALSE;
     }
-    
+   
+    //Agregado 2008 - GRUPO SEGMENTACION PURA
+    pstuPCB[iPosicion].uiTamanioTexto = uiTamanioTexto;
+    pstuPCB[iPosicion].uiTamanioDatosInicializados=uiTamanioDatosInicializados;
+    pstuPCB[iPosicion].uiTamanioStack = uiTamanioStack;
+    //Fin Agregado 2008
+
     return iPosicion;
 }
 
@@ -516,7 +524,7 @@ int iFnNuevaTareaEspecial( void *pEIP, char *stNombre )
     uiFnAgregarDescriptorGDT (
             (unsigned int)&stuTSSTablaTareas[iPosicion],//Dir base del segmento
             sizeof( stuTSS ),                           //Longitud del segmento
-            (D_TSS + D_BIG),                            //Opciones
+            (D_TSS | D_BIG),                            //Opciones
             uiIndiceGDT_TSS);                           //Posicion en la GDT
 
     /* PCB */
@@ -531,7 +539,11 @@ int iFnNuevaTareaEspecial( void *pEIP, char *stNombre )
                                    (igual a la de la tabla de PCBs) */
              0x000000,          /* base del segmento (usa el del kernel, por lo
                                    tanto, es cero) */
-             0xffffffff         /* limite fisico (4gb) */ );
+             0xffffffff,        /* limite fisico (4gb) */
+             0,                 /* Tamanio del codigo*/
+             0,                 /* Tamanio del bloque de datos inicializados*/
+             0                  /* Tamanio del Stack*/
+             );
 
 
     //ESCRIBIMOS EN EL STACK SPACE (RING 0) DEL PROCESO CREADO EL CONTENIDO DE
@@ -554,7 +566,7 @@ int iFnNuevaTareaEspecial( void *pEIP, char *stNombre )
  */
 int iFnInstanciarInit()
 {
-    return iFnCrearProceso(__init_begin(), __init_size(), "PR_Init()...");
+    return iFnCrearProceso("INIT.BIN");
 }
 
 
@@ -564,25 +576,37 @@ int iFnInstanciarInit()
  */
 int iFnInstanciarIdle()
 {
-    //iTareaNula es variable GLOBAL
-    iTareaNula = iFnCrearProceso(__idle_begin(), __idle_size(), "PR_Idle()...");
+    iTareaNula = iFnCrearProceso("IDLE.BIN");
     return iTareaNula;
 }
 
 
 /**
- * @brief Crea un proceso
- * @returns La posicion dentro de la Tabla de PCBs
- */
-int iFnCrearProceso(void* pvInicioBinario,
+\brief Crea un proceso a partir de un archivo binario
+\param stArchivo Nombre del archivo binario con el cual crear el proceso
+\returns Si hubo exito, la posicion dentro de la Tabla de PCBs, si no, un numero menor a 0
+*/
+int iFnCrearProceso(
+        /*
+        void* pvInicioBinario,
         unsigned long ulTamanioBinario,
-        char* stNombreProceso)
+        char* stNombreProceso
+        */
+        char* stArchivo)
 {
     unsigned short int bInterrupcionesHabilitadas = 0;
     unsigned int uiIndiceGDT_CS, uiIndiceGDT_DS, uiIndiceGDT_TSS;
     unsigned int uiBaseSegmento;
     int iPosicion;
     int iFlags;
+
+    unsigned int uiTamSegCodigo;
+    unsigned int uiTamSegDatos;
+    unsigned int uiTamStack;
+    unsigned int uiTamInicializados;
+
+    stuInfoEjecutable stuInfoExe;
+
 
     __asm__ ("pushf\n pop %%eax": "=a" (iFlags):);
     // Si estaban habilitadas, aqui se deshabilitan
@@ -591,9 +615,21 @@ int iFnCrearProceso(void* pvInicioBinario,
         bInterrupcionesHabilitadas = 1;
     }
 
+    //Se lee la cabecera del archivo binario
+    if( iFnLeerCabeceraEjecutable(stArchivo, &stuInfoExe) == -1) {
+        return -1;
+    }
+  
+    //Vamos a crear descriptores con granularidad 4K, por ello convertimos los
+    //datos leidos del binario a granularidad 4K
+    uiTamSegCodigo     = REDONDEAR_HACIA_ARRIBA_A_4K(stuInfoExe.uiTamanioTexto);
+    uiTamStack         = REDONDEAR_HACIA_ARRIBA_A_4K(stuInfoExe.uiTamanioStack);
+    uiTamInicializados = REDONDEAR_HACIA_ARRIBA_A_4K(stuInfoExe.uiTamanioDatosInicializados);
+    uiTamSegDatos      = REDONDEAR_HACIA_ARRIBA_A_4K(uiTamSegCodigo + uiTamStack + uiTamInicializados); //Se crea sin Heap
+
     //Se reserva la memoria para el proceso (se usa un unico segmento para
     //Codigo y Datos)
-    uiBaseSegmento = (unsigned int) pvFnReservarSegmento( SEGMENT_SIZE );
+    uiBaseSegmento = (unsigned int) pvFnReservarSegmento( uiTamSegDatos );
     
     if( uiBaseSegmento == NULL ) {
         return -ENOMEM;
@@ -617,45 +653,33 @@ int iFnCrearProceso(void* pvInicioBinario,
     }
 
     /* Descriptor de CODIGO */
-
-    // Se crea tomando como base el descriptor de CODIGO del Kernel
-    ucpFnCopiarMemoria(
-        (unsigned char*) &pstuTablaGdt->stuGdtDescriptorDescs[uiIndiceGDT_CS], 
-        (unsigned char*) &pstuTablaGdt->stuGdtDescriptorDescs[wFnGetCS() / 8],
-        sizeof( stuGDTDescriptor ) );
-    /* Divido por 4k porque me estoy copiando el descriptor de CODIGO del kernel
-     * que tiene granularidad 4Kb
-     */
-    uiFnSetearBaseLimiteDescriptor( uiIndiceGDT_CS, uiBaseSegmento,
-                                    (SEGMENT_SIZE / 4096) - 1 ); 
+    uiFnAgregarDescriptorGDT (
+            uiBaseSegmento,                         //Dir base del segmento
+            EN_GRANULARIDAD_4K(uiTamSegCodigo) - 1, //Longitud del segmento
+            (D_CODE | D_READ | D_BIG | D_4KB),      //Opciones
+            uiIndiceGDT_CS);                        //Posicion en la GDT
 
     /* Descriptor de DATOS */
-
-    // Se crea tomando como base el descriptor de DATOS del Kernel
-    ucpFnCopiarMemoria(
-        (unsigned char*) &pstuTablaGdt->stuGdtDescriptorDescs[uiIndiceGDT_DS], 
-        (unsigned char*) &pstuTablaGdt->stuGdtDescriptorDescs[wFnGetDS() / 8],
-        sizeof( stuGDTDescriptor ) );
-    /* Divido por 4k porque me estoy copiando el descriptor de DATOS del kernel
-     * que tiene granularidad 4Kb
-     */
-    uiFnSetearBaseLimiteDescriptor( uiIndiceGDT_DS, uiBaseSegmento,
-                                    (SEGMENT_SIZE / 4096) - 1  );
+    uiFnAgregarDescriptorGDT (
+            uiBaseSegmento,                         //Dir base del segmento
+            EN_GRANULARIDAD_4K(uiTamSegDatos) - 1,  //Longitud del segmento
+            (D_DATA | D_WRITE | D_BIG | D_4KB),     //Opciones
+            uiIndiceGDT_DS);                        //Posicion en la GDT
 
     /* COPIA de CODIGO */ 
 
     vFnLog("\nCopiando el codigo del proceso \"%s\" de 0x%x a 0x%x, ocupa %d "
-            "bytes", stNombreProceso, pvInicioBinario, uiBaseSegmento,
-            ulTamanioBinario);
+            "bytes", stuInfoExe.stNombre, stuInfoExe.pvPuntoCarga,
+            uiBaseSegmento, stuInfoExe.uiTamanioTexto);
     ucpFnCopiarMemoria(
         (unsigned char*)uiBaseSegmento,
-        (unsigned char*)pvInicioBinario,
-        SEGMENT_SIZE );
+        (unsigned char*)stuInfoExe.pvPuntoCarga,
+        stuInfoExe.uiTamanioTexto );
 
     /* TSS */
 
     if( iPosicion != iFnCrearTSS( 0x0, /* arranca en la pos 0 del binario */
-                                    (void*)(SEGMENT_SIZE - 0x10),
+                                    (void*)(uiTamSegDatos - 0x10),
                                     iPosicion,
                                     uiIndiceGDT_CS * 8,
                                     uiIndiceGDT_DS * 8,
@@ -671,20 +695,23 @@ int iFnCrearProceso(void* pvInicioBinario,
     uiFnAgregarDescriptorGDT (
             (unsigned int)&stuTSSTablaTareas[iPosicion],//Dir base del segmento
             sizeof( stuTSS ),                           //Longitud del segmento
-            (D_TSS + D_BIG),                            //Opciones
+            (D_TSS | D_BIG),                            //Opciones
             uiIndiceGDT_TSS);                           //Posicion en la GDT
 
     /* PCB */
     
     iFnCrearPCB( iPosicion,     /* PCB de init */
              0x0,               /* direccion de arranque de init */
-             stNombreProceso,   /* nombre */
+             stuInfoExe.stNombre,   /* nombre */
              uiIndiceGDT_CS,    /* Posicion del descrip CODIGO en la GDT */
              uiIndiceGDT_DS,    /* Posicion del descrip DATOS  en la GDT */
              uiIndiceGDT_TSS,   /* Posicion del descrip TSS    en la GDT */
              iPosicion,         /* posicion dentro de la tabla de TSSs */
              uiBaseSegmento,    /* dir base del segmento asignado a este proc */
-             SEGMENT_SIZE       /* LONGITUD del segmento */
+             uiTamSegDatos,     /* LONGITUD del segmento */
+             uiTamSegCodigo,    /* Tamanio del codigo */
+             uiTamInicializados,/* Tamanio del bloque de datos inicializados */
+             uiTamStack         /* Tamanio del Stack */
              );
 
     if (bInterrupcionesHabilitadas)
@@ -695,7 +722,7 @@ int iFnCrearProceso(void* pvInicioBinario,
 
 
 /**
- * @brief Redimensiona un Proceso (cambia tamanios de segmentos de codigo y datos y actualiza las estructuras asodiadas (GDT, PCB, TSS, etc) )
+ * @brief Redimensiona un Proceso (cambia tamanio y posicion de segmento de datos, posicion de segmento de codigo y actualiza las estructuras asodiadas (GDT, PCB, TSS, etc) )
  * @param uiPid Pid del proceso a realocar
  * @param ulBrk Nuevo tamanio para el proceso 
  * @returns Ejecucion correcta: 0. Error: -1
@@ -709,18 +736,36 @@ int iFnRedimensionarProceso(unsigned long ulPid, unsigned long ulBrk) {
     //Convertimos la direccion de BRK en multiplo de 4Kb, ya que usamos los
     //descriptores para los procesos con granularidad 4Kb
     ulBrk = REDONDEAR_HACIA_ARRIBA_A_4K(ulBrk);
-  
-    //TODO - lala - comprobar que el nuevo ulBrk no sea inferior al minimo
-    // permitido para este proceso (menor al area de codio [y stack?]) ni sea
-    // mayor al maximo de memoria permitido para un proceso [hoy en dia no
-    // existe tal cosa]
+ 
+    
+    /* Comprobamos que el nuevo ulBrk no sea inferior al minimo permitido para
+     * este proceso (menor al area de codigo, datos y stack), ni sea menor que
+     * la direccion maxima de las memorias compartidas que tenga en este momento
+     */ 
+    if( ulBrk <= (pPCB->uiTamanioTexto +
+                  pPCB->uiTamanioDatosInicializados +
+                  pPCB->uiTamanioStack) ||
+        ulBrk <= ulFnMaxDirShmProc(ulPid) ) {
+        vFnLog("\niFnRedimensionarProceso: No se puede redimensionar proceso, "
+                "BRK invalido (valor muy bajo)");
+        return -1;
+    }
 
-    //TODO - lala - cambiar realloc por una funcion que llame a realloc
-    ulDirBaseNueva = (unsigned long) pvFnKRealloc(
-                        (void *)pPCB->uiDirBase, ulBrk, MEM_ALTA | MEM_USUARIO);
+    /* Comprobamos tambien que el nuevo ulBrk no supere el maximo de memoria
+     * permitida para un proceso
+     */
+    if( ulBrk >= MAX_MEMORIA_PROCESO) {
+        vFnLog("\niFnRedimensionarProceso: No se puede redimensionar proceso, "
+                "BRK invalido (valor mayor al permitido por el sistema)");
+        return -1;
+    }
+
+
+    ulDirBaseNueva = (unsigned long) pvFnRedimensionarSegmento(
+                                                (void *)pPCB->uiDirBase, ulBrk);
   
-    //Si no se pudo hacer el realloc, se deja el segmento como estaba y
-    //devolvemos -1
+    //Si no se pudo hacer el redimensionamiento, se deja el segmento como estaba
+    //y devolvemos -1
     if(ulDirBaseNueva == NULL) {
         vFnLog("\niFnRedimensionarProceso: No se pudo redimensionar proceso");
         return -1;
@@ -754,7 +799,18 @@ int iFnDuplicarProceso( unsigned int uiProcPadre ){
              uiStackUsuario,
              uiComienzoStackKernel,
              uiBaseSegmento;
-    int iPosicion = 0;
+
+    unsigned int uiTamSegCodigo;
+    unsigned int uiTamSegDatos;
+    unsigned int uiTamStack;
+    unsigned int uiTamInicializados;
+  
+    uiTamSegCodigo = pstuPCB[uiProcPadre].uiTamanioTexto;
+    uiTamSegDatos = pstuPCB[uiProcPadre].uiLimite;
+    uiTamStack = pstuPCB[uiProcPadre].uiTamanioStack;
+    uiTamInicializados = pstuPCB[uiProcPadre].uiTamanioDatosInicializados;
+
+    int iPosicion;
 
     /* No deshabilitamos las interrupciones porque esta funcion se invoca desde
      * el syscall fork(), que a su vez es llamado por el handler de la int 0x80,
@@ -762,9 +818,9 @@ int iFnDuplicarProceso( unsigned int uiProcPadre ){
      * deshabilitan las demas
      */
 
-    //Se reserva la memoria para el proceso (se usa un unico segmento para
+    //Se reserva la memoria para el proceso nuevo (se usa un unico segmento para
     //Codigo y Datos)
-	uiBaseSegmento = (unsigned int) pvFnReservarSegmento( SEGMENT_SIZE );
+	uiBaseSegmento = (unsigned int) pvFnReservarSegmento( uiTamSegDatos );
 
     if( uiBaseSegmento == NULL ) {
         return -ENOMEM;
@@ -805,11 +861,10 @@ int iFnDuplicarProceso( unsigned int uiProcPadre ){
         (unsigned char*) &pstuTablaGdt->
                 stuGdtDescriptorDescs[stuTSSTablaTareas[uiProcPadre].cs / 8],
         sizeof( stuGDTDescriptor ) );
-    /* Divido por 4k porque me estoy copiando el descriptor de CODIGO del kernel
-     * que tiene granularidad 4Kb
-     */
-    uiFnSetearBaseLimiteDescriptor( uiIndiceGDT_CS, uiBaseSegmento,
-                                    (SEGMENT_SIZE / 4096) - 1 ); 
+    // Granularidad 4K (idem Padre) TODO: Verificar que sea 4K
+    uiFnSetearBaseLimiteDescriptor( uiIndiceGDT_CS,
+                                    uiBaseSegmento,
+                                    EN_GRANULARIDAD_4K( uiTamSegCodigo ) - 1 ); 
 
     /* Descriptor de DATOS */
 
@@ -818,17 +873,15 @@ int iFnDuplicarProceso( unsigned int uiProcPadre ){
         (unsigned char*) &pstuTablaGdt->
                 stuGdtDescriptorDescs[stuTSSTablaTareas[uiProcPadre].ds / 8],
         sizeof( stuGDTDescriptor ) );
-    /* Divido por 4k porque me estoy copiando el descriptor de DATOS del kernel
-     * que tiene granularidad 4Kb
-     */
-    uiFnSetearBaseLimiteDescriptor( uiIndiceGDT_DS, uiBaseSegmento,
-                                    (SEGMENT_SIZE / 4096) - 1 );
+    // Granularidad 4K (idem Padre) TODO: Verificar que sea 4K
+    uiFnSetearBaseLimiteDescriptor( uiIndiceGDT_DS,
+                        uiBaseSegmento,
+                        EN_GRANULARIDAD_4K( uiTamSegDatos ) - 1 ); 
 
     /* Copio todo el segmento del proc actual al nuevo */
     ucpFnCopiarMemoria( (unsigned char*)uiBaseSegmento,
                         (unsigned char*)pstuPCB[uiProcPadre].uiDirBase, 
-                        //TODO - lala Cambiar esto:
-                        SEGMENT_SIZE );
+                        uiTamSegDatos ); 
 
     /* TSS */
 
@@ -911,7 +964,7 @@ int iFnDuplicarProceso( unsigned int uiProcPadre ){
 
     uiFnAgregarDescriptorGDT ((unsigned int)
                     &stuTSSTablaTareas[iPosicion], sizeof( stuTSS ),
-                    (D_TSS + D_BIG), uiIndiceGDT_TSS);
+                    (D_TSS | D_BIG), uiIndiceGDT_TSS);
    
  
 #if 0
@@ -948,8 +1001,11 @@ vFnImprimir( "\n fork(): EAX (modificado): %x", stuTSSTablaTareas[iPosicion].eax
              uiIndiceGDT_DS,    /* Posicion del descrip DATOS  en la GDT */
              uiIndiceGDT_TSS,   /* Posicion del descrip TSS    en la GDT */
              iPosicion,         /* posicion dentro de la tabla de TSSs */
-             uiBaseSegmento,    /* base del segmento asignado*/
-             SEGMENT_SIZE       /* LONGITUD del segmento */
+             uiBaseSegmento,    /* base del segmento asignado */
+             uiTamSegDatos,     /* LONGITUD del segmento */
+             uiTamSegCodigo,    /* Tamanio del codigo */
+             uiTamInicializados,/* Tamanio del bloque de datos inicializados */
+             uiTamStack         /* Tamanio del stack */
              );
 
 
@@ -959,22 +1015,26 @@ vFnImprimir( "\n fork(): EAX (modificado): %x", stuTSSTablaTareas[iPosicion].eax
     // Agregado 07/10/08:
     pstuPCB[iPosicion].ulParentId = pstuPCB[uiProcPadre].ulId;
 
+    //TODO - Copiar memorias compartidas del padre y todos los demas
+    //recursos que el hijo deba heredar
+
     return iPosicion;
 }
 
 
 /**
- * @brief Reemplaza el CODIGO del proceso indicado y ejecuta desde "cero"
- * @param Posicion del proceso dentro de la tabla de PCBs
- * @param Direccion lineal donde se ubica el codigo a copiar
- * @param Cantidad de bytes de codigo a copiar
+ * @brief Reemplaza el proceso indicado y ejecuta desde "cero"
+ * @param ulPid PID del proceso a reemplazar
+ * @param stArchivo Nombre del archivo binario por el cual reemplazar
  * @returns La posicion dentro de la tabla de PCBs del proceso modificado
  */
 int iFnReemplazarProceso(
-        unsigned int uiProceso,
+        unsigned long ulPid,
+        char * stArchivo
+/*        unsigned int uiProceso,
         unsigned char *ucpCodigo,
-        unsigned int uiTamanio ) {
-    
+        unsigned int uiTamanio */) {
+#if 0    
     unsigned int uiESPOriginal,
              uiStackUsuario,
              uiComienzoStackKernel;
@@ -984,10 +1044,27 @@ int iFnReemplazarProceso(
      * 0x80, por lo cual al momento de comenzar la atencion de la interrupcion,
      * se deshabilitan las demas
      */
-    
+
+
+
+
+
+
+
+
+
     /* No buscamos un segmento libre, ni buscamos entradas disponibles en la GDT     * porque lo unico que tenemos q realizar es reemplazar el codigo del
      * proceso indicado, y resetear el estado, para arrancar este nuevo programa
      * desde "cero" */
+
+
+
+
+
+
+
+
+
 
     /* Copio todo el segmento de codigo al segmento del proceso actual */
     ucpFnCopiarMemoria( (unsigned char*)pstuPCB[uiProceso].uiDirBase,
@@ -1031,7 +1108,8 @@ int iFnReemplazarProceso(
      * del kernel)
      */
     uiStackUsuario = pstuPCB[uiProceso].uiDirBase + uiESPOriginal;
-    
+   
+    //TODO - Actualizar a segmentos variables(aunque ya estaba comentado, por?):
     //*(unsigned int*)(uiComienzoStackKernel-0x08) = SEGMENT_SIZE - 0x10; // ESP
     //*(unsigned int*)(uiComienzoStackKernel-0x0c) = SEGMENT_SIZE - 0x10; // EBP
 
@@ -1047,8 +1125,15 @@ int iFnReemplazarProceso(
 
     //TODO - Limpiar valores de FPU
 
+    //Desadjuntamos todas las memorias compartidas
+    iFnShmDtAllProc( pstuPCB[ uiProceso ].ulId );
+
     return (int) uiProceso;
+#endif    
 }
+
+
+
 
 
 /**
@@ -1058,16 +1143,11 @@ int iFnReemplazarProceso(
  */
 int iFnEliminarProceso( unsigned int uiProceso ) {
     int iPCBPadre;
-    /* Marcamos el segmento que ocupaba como disponible: */
-/*    vFnImprimir( "\n waitpid(): Liberando el segmento %d, base %x",
-             pstuPCB[ uiProceso ].uiDirBase / SEGMENT_SIZE,
-             pstuPCB[ uiProceso ].uiDirBase );*/
-/* CHAU    mapa_segmentos_set( pstuPCB[ uiProceso ].uiDirBase / SEGMENT_SIZE, 0 );
-*/
-    //TODO - lala - SACAR!
-//vFnLiberarSegmento( (void *)pstuPCB[ uiProceso ].uiDirBase,
-//                    pstuPCB[ uiProceso ].uiLimite);
-    vFnKFree( (void *)pstuPCB[ uiProceso ].uiDirBase );
+
+    vFnLog( "\niFnEliminarProceso(): Liberando el segmento base %x (%d bytes)",
+             pstuPCB[ uiProceso ].uiDirBase, pstuPCB[ uiProceso ].uiLimite);
+
+    vFnLiberarSegmento( (void *)pstuPCB[ uiProceso ].uiDirBase);
 
     /* Liberamos las 3 entradas de la GDT reservadas para el descriptor
      * de segmento de codigo, datos y TSS: */
@@ -1085,6 +1165,9 @@ int iFnEliminarProceso( unsigned int uiProceso ) {
         pstuPCB[iPCBPadre].iEstado = PROC_LISTO;
     }
 
+    //Desadjuntamos todas las memorias compartidas
+    iFnShmDtAllProc( pstuPCB[ uiProceso ].ulId );
+
     /* Liberamos la PCB que utilizaba (y por consiguiente, la entrada en la
      * tabla de TSS */
     vFnLog( "\n iFnEliminarProceso(): Eliminando PCB %d (PID %d)", uiProceso,
@@ -1095,11 +1178,65 @@ int iFnEliminarProceso( unsigned int uiProceso ) {
 }
 
 
-/* Agregado por el grupo */
 /**
- * @brief Crea un nuevo proceso, pero compartiendo el segmento de datos y codigo
- * del proceso que lo llamo
- *
+\brief Abre un archivo ejecutable y recupera la informacion de su cabecera
+\param stArchivo Nombre del archivo ejecutable
+\param pstuInfo Puntero a una estructura stuInfoEjecutable, donde se almacenan los datos leidos
+\returns 0 si concluye con exito, -1 si hay error
+*/
+int iFnLeerCabeceraEjecutable(char* stArchivo, stuInfoEjecutable* pstuInfo) {
+
+    /**
+     * \note Hoy en dia los ejecutables que acepta Sodium son binarios planos,
+     * por lo que no hay cabecera a leer; se toman los valores desde el RamFS.
+     * Cuando Sodium tenga un mejor soporte de FS e interprete archivos ELF, se 
+     * deberia modificar esta funcion para que los interprete.
+     */
+
+    int i;
+    stEntradaLS *pstEntLs;
+    stDirectorio *pstDirBusqueda;
+
+    if (iFnObtenerDirectorio("/mnt/usr", &pstDirBusqueda) < 0) {
+        vFnImprimir("\nSodium Dice: Error! Directorio /mnt/usr no existe");
+        return -1;
+    }
+    if( iFnBuscarArchivo(pstDirBusqueda, stArchivo, &pstEntLs) < 0) {
+        vFnImprimir("\nSodium Dice: Error! El archivo %s no existe", stArchivo);
+        return -1;
+    } 
+
+    pstuInfo->pvPuntoCarga = (void*)DIR_LINEAL(pstEntLs->wSeg,pstEntLs->wOff);
+    pstuInfo->uiTamanioTexto  = pstEntLs->dwTamanio;
+    pstuInfo->uiTamanioDatosInicializados = 0;
+    pstuInfo->uiTamanioStack  = STACK_SIZE;
+
+    for (i = 0; i < 11; i++) {
+        pstuInfo->stNombre[i] = pstEntLs->strNombreArchivo[i];
+    }
+    pstuInfo->stNombre[i] = '\0';
+
+    return 0;
+}
+
+
+/******************************************************************************/
+
+
+/* Agregado por el grupo */ /* ANIO: ??? */
+
+/* 12/10/2008:
+ * TODO - Rehacer esta funcion. NO ANDA!
+ * Tener en cuenta que el codigo de la funcion esta basado en la implementacion
+ * anterior de segmentacion en Sodium (segmentos fijos). No se actualizo la
+ * funcion para que soporte segmentos de tamanos variables, ya que no anda.
+ * Esta funcion es indispensable para el trabajo con threads
+ */
+
+#define SEGMENT_SIZE    0x01000 // 32 Kb
+
+/**
+ * @brief NO ANDA! REHACER... (Supuestamente) Crea un nuevo proceso, pero compartiendo el segmento de datos y codigo del proceso que lo llamo
  * @returns 0 si fue exitoso, distinto de 0 si hubo error
  */
 int iFnClonarProceso() {
@@ -1109,15 +1246,12 @@ int iFnClonarProceso() {
     int iPosicion;
     unsigned int uiComienzoStackKernel, uiStackUsuario;
     
-    //TODO - Revisar donde se usa esta funcion, tiene apariencia dudosa (anda?)
-
     if(!uiIndiceGDT_TSS) {
         vFnImprimir("ENOMEM\n");
         return -ENOMEM;
     }
 
     iPosicion = iFnBuscarPCBLibre();
-/* CHAU    uiBaseSegmento = uiFnBuscarSegmentoLibre() * SEGMENT_SIZE;*/
     uiBaseSegmento = (unsigned int) pvFnReservarSegmento( SEGMENT_SIZE );
 
     uiIndiceGDT_DS = uiFnBuscarEntradaGDTLibre();
@@ -1212,7 +1346,7 @@ int iFnClonarProceso() {
     
     uiFnAgregarDescriptorGDT ((unsigned int)
                     &stuTSSTablaTareas[iPosicion], sizeof( stuTSS ),
-                    (D_TSS + D_BIG), uiIndiceGDT_TSS);
+                    (D_TSS | D_BIG), uiIndiceGDT_TSS);
     
     ++pstuPCB[ulProcActual].lNHijos;    
 
@@ -1226,7 +1360,10 @@ int iFnClonarProceso() {
             uiIndiceGDT_TSS,
             iPosicion,
             uiBaseSegmento,
-            SEGMENT_SIZE);
+            SEGMENT_SIZE,
+            0,
+            0,
+            0);
 
     return 0;
 }

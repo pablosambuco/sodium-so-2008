@@ -37,6 +37,7 @@ void vFnMenuMem ();
 void vFnMenuVer ();
 void vFnMenuDesc (int);
 void vFnMenuDump (int);
+void vFnMenuEjecutar(int);
 void vFnMenuStack (int);
 void vFnMenuGdt ();
 void vFnMenuIdt ();

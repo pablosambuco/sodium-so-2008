@@ -23,24 +23,33 @@ void vFnInicializarMemoriaSegmentada() {
 /**
  * @brief Reserva un segmento de memoria (no crea descriptores, solo quita el
  * espacio de la lista de libres)
- * @param Tamanio en bytes del bloque libre a reservar
- * @returns La direccion del bloque libre o 0 si no se encontro ninguno
- * @date 08-02-2008
+ * @param Tamanio en bytes del bloque a reservar
+ * @returns La direccion del bloque o NULL si no se pudo reservar
+ * @date 02-08-2008
  */
-//TODO - SACAR! (?)
 void * pvFnReservarSegmento(unsigned int uiTamanioDeseado) {
     return pvFnKMalloc(uiTamanioDeseado, MEM_ALTA | MEM_USUARIO);
 }
- 
+
+
+/**
+ * @brief Redimensiona un segmento de memoria (no modifica descriptores, solo
+ * quita el espacio de la lista de libres)
+ * @param Nuevo tamanio en bytes del bloque
+ * @returns La direccion del bloque o NULL si no se pudo reservar
+ * @date 18-10-2008
+ */
+void * pvFnRedimensionarSegmento(void * pvBloque, unsigned int uiTamanioDeseado) {
+    return pvFnKRealloc(pvBloque, uiTamanioDeseado, MEM_ALTA | MEM_USUARIO);
+}
+
 
 /**
  * @brief Agrega un segmento de memoria a la lista de bloques libres
  * @param Direccion de inicio del segmento
  * @param Tamanio del segmento (en bytes)
  */
-//TODO - SACAR! (?)
-void vFnLiberarSegmento( void * pInicioSegmento,
-                         unsigned int uiTamanioSegmento ) {
+void vFnLiberarSegmento( void * pInicioSegmento ) {
     vFnKFree(pInicioSegmento);
 }
 

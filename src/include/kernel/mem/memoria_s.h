@@ -16,7 +16,8 @@ t_nodo stuListaSegmentosLibres;
 
 void vFnInicializarMemoriaSegmentada();
 void * pvFnReservarSegmento(unsigned int);
-void vFnLiberarSegmento( void *, unsigned int);
+void * pvFnRedimensionarSegmento(void *, unsigned int);
+void vFnLiberarSegmento( void * );
 void vFnListarBloquesLibres();
 
 #endif
