@@ -9,6 +9,8 @@
 inline unsigned char* ucpFnCopiarMemoria(unsigned char *ucpDestino, 
 				  unsigned char *ucpOrigen, 
 				  unsigned int uiTamanio);
+inline unsigned char* ucpFnMemSetCero(unsigned char *ucpDirInicio,
+                  unsigned int uiTamanio );
 
 int iFnLongitudCadena (const char *cnstCadena);
 int iFnCompararCadenas (const char *, const char *);

@@ -122,6 +122,25 @@ void *pvFnKMalloc(dword nTamanio, unsigned int uiOpciones)
 
 
 /**
+\brief Reserva memoria dinamicamente inicializada en 0
+\param nTamanio Indica la cantidad de bytes de memoria que deseo reservar
+\param uiOpciones Flags de control
+\returns Puntero a void que indica el comienzo del bloque de memoria reservada. En caso de no poder asignar la memoria devuelve NULL
+\date 22/10/2008
+*/
+void *pvFnKCalloc(unsigned int uiTamanio, unsigned int uiOpciones) {
+    void * pvRetorno;
+
+    pvRetorno = pvFnKMalloc(uiTamanio, uiOpciones);
+    if(pvRetorno == NULL) {
+        return NULL;
+    }
+
+    return (void*)ucpFnMemSetCero( (unsigned char*)pvRetorno, uiTamanio );
+}
+
+
+/**
 \brief Modifica un bloque de memoria reservado dinamicamente
 \param pBloqueAModificar Puntero al bloque de memoria a modificar
 \param uiNuevoTamanio Cantidad de bytes de memoria que deseo reservar

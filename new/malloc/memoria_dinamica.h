@@ -35,8 +35,14 @@ void * malloc( unsigned int );
 void * realloc( void *, unsigned int );
 void free( void * );
 void vFnInsertarBloqueLibreEnListaOrd( t_nodo * );
-void * pvFnBuscarNodoAnteriorMemoriaLibre( unsigned int );
+void * pvFnBuscarNodoAnteriorMemoriaLibre( unsigned int, t_nodo ** );
 int iFnAgrandarHeap( int, char**, char** );
 void vFnMostrarMemLibreHeap();
+
+
+//Esta funcion en realidad se usa de libk/string.h
+inline unsigned char* ucpFnMemSetCero(unsigned char *ucpDirInicio,
+                                        unsigned int uiTamanio );
+
 
 #endif

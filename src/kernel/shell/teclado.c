@@ -7,6 +7,13 @@
 #include <shell/teclado.h>
 #include <shell/shell.h>
 
+// 21/10/2008 - Agregados para CTRL+C
+#include <kernel/gdt.h>
+#include <kernel/pcb.h>
+#include <kernel/signal.h>
+#include <kernel/syscall.h>
+// Fin Agregados 21/10/2008
+
 int bActivarTeclado = 0;
 
 stuDefinicionTeclado stuMapaTeclado;
@@ -28,7 +35,7 @@ int iLlenarIndice = 0;
 \brief Se ejecutará desde el manejador del teclado de la IDT.
 Como se ejecuta en forma asincrónica, se usa un flag semáforo para evitar (en realidad minimizar, a menos que usemos cli y sti)los efectos de las condiciones de carrera.
 \param ucScanCode Scancode recibido desde el teclado
-\date 14/07/2008
+\date 21/10/2008
 */
 void vFnManejadorTecladoShell (unsigned char ucScanCode)
 {
@@ -74,6 +81,14 @@ void vFnManejadorTecladoShell (unsigned char ucScanCode)
     {
         while (iSemaforoBufferTeclado != 0);
         iSemaforoBufferTeclado = 1;
+
+        if( iFnCombinacionTeclasEspecial(keycode) ) {
+            //Si llega, por ejemplo, CTRL+C, no lo colocamos en el buffer, ya
+            //que la funcion anterior se encargo de manejarlo
+            iSemaforoBufferTeclado = 0;
+            return;
+        }
+
         stBufferTeclado[iLlenarIndice++] = keycode.ascii;
         if (iLlenarIndice > (TAMANIO_BUFFER_TECLADO - 1))
             iLlenarIndice = 0;
@@ -261,6 +276,40 @@ int iFnTeclaEspecial (stuKeyCode keycode, unsigned char ucTeclaLevantada)
     return 0;
 }
 
+
+/**
+\brief Detecta si se presiono una combinacion especial de teclas y actua en consecuencia
+\param keycode Keycode recibido
+\return Retorna 1 si se dio una combinacion especial, 0 si no
+\date 22/10/2008
+\note Combinaciones tratadas: CTRL+c
+*/
+int iFnCombinacionTeclasEspecial(stuKeyCode keycode) {
+    unsigned long ulPosFg;
+
+    /* Si la combinacion de teclas presionadas es CTRL+c, enviamos SIGINT al
+     * proceso que corre Foreground
+     */
+    if( ctrl && keycode.ascii == 'c') {
+        //vFnImprimir("CTRL+C");
+        ulPosFg = iFnBuscaPosicionProc(ulPidProcesoForeground);
+        /* Si Shell no esta esperando a ningun proceso, no tiene sentido
+         * despertarlo
+         */
+        if ( pstuPCB[1].iEstado == PROC_ESPERANDO ) {
+            /* Ya que puede que el proceso actual no ejecute mas (si es el que
+             * tiene que recibir la senial, limpiamos el 'semaforo' de teclado
+             */
+            iSemaforoBufferTeclado = 0;
+
+            //Enviamos SIGINT al Proceso Foreground
+            lFnSysKill(ulPidProcesoForeground, SIGINT);
+        }
+        return 1;
+    }
+
+    return 0;
+}
 
 /**
 \fn void * pvFnAbrirArchivoKeymap ()

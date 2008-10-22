@@ -539,6 +539,7 @@ void vFnScanCodeAKeyCode( stuKeyCode*, unsigned char );
 void vFnScanCodeExtAKeyCode( stuKeyCode*, unsigned char );
 void vFnKeyCodeNumPad( stuKeyCode* );
 int  iFnTeclaEspecial ( stuKeyCode, unsigned char );
+int  iFnCombinacionTeclasEspecial( stuKeyCode );
 void * pvFnAbrirArchivoKeymap (void);
 int iFnCambiaTecladoI(unsigned int);
 int iFnCambiaTecladoS(char *);

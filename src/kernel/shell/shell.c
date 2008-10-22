@@ -47,7 +47,6 @@ extern unsigned int uiTamanioBSS;
 extern unsigned int uiTamanioKernel;
 extern unsigned int uiModoMemoria;
 extern stuVentana pstuVentana[HWND_VENTANA_MAX];
-//TODO: CHAU, ya no existe: extern int iMatrizMf[30][2];
 extern int iTamanioPagina;
 
 extern semaforo semaforosEnElSistema[CANTMAXSEM];
@@ -389,11 +388,14 @@ void vFnShell()
 		} else {
 			vFnImprimir("\n uso: syskill PID SIG"
 				    "\n SIG: "
+				    "\n  SIGFPE  %d"
+				    "\n  SIGSEGV %d"
+				    "\n  SIGINT  %d"
 				    "\n  SIGSTOP %d"
 				    "\n  SIGCONT %d"
 				    "\n  SIGKILL %d"
 				    "\n  SIGTERM %d",
-				    SIGSTOP, SIGCONT, SIGKILL, SIGTERM);
+				   SIGFPE, SIGSEGV, SIGINT, SIGSTOP, SIGCONT, SIGKILL, SIGTERM);
 		}
 	}
 	/////////////////////////////////////////////////////////////////////////////
@@ -848,9 +850,10 @@ void vFnMenuInstanciarInit()
 	
     uiPosicion = iFnInstanciarInit();
 
+    ulPidProcesoForeground = pstuPCB[uiPosicion].ulId;
     //Esperamos a Init, asi no queda zombie, y ademas, lFnSysWaitPid se encarga
     //de eliminar el segmento del proceso hijo, por lo que no perdemos memoria
-    lRetorno = lFnSysWaitPid( pstuPCB[uiPosicion].ulId, &iStatus, 0 );
+    lRetorno = lFnSysWaitPid( ulPidProcesoForeground, &iStatus, 0 );
 }
 
 
@@ -1763,6 +1766,7 @@ void vFnMenuEjecutar(int iComandoPos) {
 
         //Creamos el proceso
         iPosicion = iFnCrearProceso( pstNombreArchivo );
+        ulPidProcesoForeground = pstuPCB[iPosicion].ulId;
 
         if(iPosicion < 0) {
             vFnImprimir("\nNo se pudo crear un proceso a partir de %s",
@@ -1771,7 +1775,7 @@ void vFnMenuEjecutar(int iComandoPos) {
         }
 
         //Y lo esperamos para que no quede zombie
-        lRetorno = lFnSysWaitPid( pstuPCB[iPosicion].ulId, &iStatus, 0 );
+        lRetorno = lFnSysWaitPid( ulPidProcesoForeground, &iStatus, 0 );
     } else {
 		vFnSysSetearColor(HWND_COMANDO, BLANCO_BRILLANTE);
         vFnImprimir("\nAyuda del comando ejecutar:\n");

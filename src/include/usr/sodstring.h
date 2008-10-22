@@ -9,6 +9,10 @@ inline unsigned char* memcpy(unsigned char *ucpDestino,
 				  unsigned char *ucpOrigen, 
 				  unsigned int uiTamanio);
 
+inline unsigned char* memcero(unsigned char *ucpDirInicio,
+                  unsigned int uiTamanio );
+
+
 
 #endif
 

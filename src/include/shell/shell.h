@@ -80,4 +80,6 @@ void vFnInicializarEnv();
 
 stuENV pstuENV[VARIABLESENV]; /*!< vector de variables de entorno */
 
+unsigned long ulPidProcesoForeground; /*!< Pid del proceso foreground en este Shell */
+
 #endif

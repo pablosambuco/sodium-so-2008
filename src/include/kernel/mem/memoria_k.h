@@ -41,6 +41,7 @@ typedef struct nodoOcupado
 void vFnIniciarKMem();
 
 void *pvFnKMalloc(dword, unsigned int);
+void *pvFnKCalloc(unsigned int, unsigned int);
 void *pvFnKRealloc(void *, unsigned int, unsigned int);
 void vFnKFree(void *); 
 

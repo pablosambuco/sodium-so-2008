@@ -6,8 +6,8 @@
 #define __MEMORIA_DINAMICA_H
 
 
-#define HEAP_TAMANIO_INICAL 4000
-#define HEAP_INCREMENTO 4000
+#define HEAP_TAMANIO_INICIAL 3000
+#define HEAP_INCREMENTO 3000
 
 
 /*!
@@ -32,10 +32,11 @@ typedef struct nodoOcupado
 
 
 void * malloc( unsigned int );
+void * calloc( unsigned int );
 void * realloc( void *, unsigned int );
 void free( void * );
 void vFnInsertarBloqueLibreEnListaOrd( t_nodo * );
-void * pvFnBuscarNodoAnteriorMemoriaLibre( unsigned int );
+void * pvFnBuscarNodoAnteriorMemoriaLibre( unsigned int, t_nodo ** );
 int iFnAgrandarHeap( int, char**, char** );
 void vFnMostrarMemLibreHeap();
 

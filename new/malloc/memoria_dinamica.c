@@ -5,8 +5,8 @@
 
 #include <string.h>
 
-#define HEAP_TAMANIO_INICAL 4000
-#define HEAP_INCREMENTO 4000
+#define HEAP_TAMANIO_INICIAL 3000
+#define HEAP_INCREMENTO 3000
 
 /* TODO
  * Describir la estrategia de Gestion de Memoria Dinamica a nivel usuario
@@ -18,7 +18,6 @@
  */
 t_nodo stuListaBloquesLibres;
 
-
 /**
  * @brief Reserva un bloque de memoria en el heap
  * @param Tamanio en bytes del bloque a reservar
@@ -28,6 +27,8 @@ t_nodo stuListaBloquesLibres;
 void * malloc (unsigned int uiTamanioDeseado) {
     t_nodo * pDirBloque;
     t_nodo * pNodoAnteriorAlBloque;
+    t_nodo * pNodoMasAlto;
+    t_nodo * pNodoAnteriorAlMasAlto;
     t_nodo * pNuevoBloqueLibre;
 
     /* Direccion de CORTE (BREAK, direccion siguiente al fin del segmento).
@@ -52,7 +53,11 @@ void * malloc (unsigned int uiTamanioDeseado) {
         stuListaBloquesLibres.pNodoSig = NULL;
 
         //Se crea el Heap, agrandando el segmento
-        if( iFnAgrandarHeap( HEAP_TAMANIO_INICAL,
+        /* OPTIMIZACION: Ya que sabemos de que tamanio es el primer malloc, lo
+         * tenemos en cuenta para que no haga falta redimensionar el heap dos
+         * veces
+         */
+        if( iFnAgrandarHeap( uiTamanioDeseado + HEAP_TAMANIO_INICIAL,
                               &pcAntiguoFinDeHeap, &pcFinDeHeap) != 0 ) {
             //Si el SO no nos da mas memoria no se puede hacer el malloc
             printf("\nmalloc: Imposible crear Heap");
@@ -83,8 +88,9 @@ void * malloc (unsigned int uiTamanioDeseado) {
      * al ultimo nodo de la lista si no encontro el espacio necesario
      */
     pNodoAnteriorAlBloque =
-        (t_nodo*)pvFnBuscarNodoAnteriorMemoriaLibre( uiTamanioDeseado + 
-                                                    sizeof(t_nodoOcupado) );
+        (t_nodo*)pvFnBuscarNodoAnteriorMemoriaLibre(
+                uiTamanioDeseado + sizeof(t_nodoOcupado),
+                &pNodoAnteriorAlMasAlto );
 
     //Si no se encontro espacio contiguo libre, tenemos un puntero al ultimo
     //nodo de la lista
@@ -95,27 +101,34 @@ void * malloc (unsigned int uiTamanioDeseado) {
         //TODO - Verificar que HEAP_INCREMENTO sea mayor a uiTamanioDeseado + la
         //estructura de control, si no, puede que redimensionemos el heap y siga
         //sin entrar
+        //SOLUCION SIMPLE: Agregamos HEAP_INCREMENTO + uiTamanioDeseado
 
         //Se intenta agrandar el segmento
-        if( iFnAgrandarHeap( HEAP_INCREMENTO,
+        if( iFnAgrandarHeap( uiTamanioDeseado + HEAP_INCREMENTO,
                               &pcAntiguoFinDeHeap, &pcFinDeHeap) != 0 ) {
             //Si el SO no nos da mas memoria no se puede hacer el malloc
             printf("\nmalloc: Imposible agrandar Heap");
             return NULL;
         }
+
+        pNodoMasAlto = pNodoAnteriorAlMasAlto->pNodoSig;
         
-        //Si el ultimo nodo libre llegaba hasta el final del segmento, se le
+        //Si el nodo libre mas alto llegaba hasta el final del segmento, se le
         //acopla el nuevo espacio libre, si no, se crea un nuevo nodo
-        if( pcAntiguoFinDeHeap == ( (char*)pNodoAnteriorAlBloque) + 
-                                        pNodoAnteriorAlBloque->nTamanio +
-                                        sizeof(t_nodoOcupado) ) {
+        if( pcAntiguoFinDeHeap == ( (char*)pNodoMasAlto) +
+                                    pNodoMasAlto->nTamanio +
+                                    sizeof(t_nodo) ) {
             printf("\nmalloc: Acoplando espacio libre al ultimo nodo.");
-            pNodoAnteriorAlBloque->nTamanio +=
-                                    pcFinDeHeap - pcAntiguoFinDeHeap;
+
+            pNodoMasAlto->nTamanio += pcFinDeHeap - pcAntiguoFinDeHeap;
+            pNodoAnteriorAlMasAlto->pNodoSig = pNodoMasAlto->pNodoSig;
+
+            vFnInsertarBloqueLibreEnListaOrd( pNodoMasAlto );
 
             //Se busca el anterior al bloque libre (ahora sabemos que existe)
             pNodoAnteriorAlBloque = (t_nodo*)pvFnBuscarNodoAnteriorMemoriaLibre(
-                                    uiTamanioDeseado + sizeof(t_nodoOcupado) );
+                                    uiTamanioDeseado + sizeof(t_nodoOcupado),
+                                    NULL );
         } else {
             printf("\nmalloc: Creando nuevo bloque de espacio libre.");
             //Se lo agrega a la lista de libres (SIEMPRE sera el ultimo nodo)
@@ -157,6 +170,24 @@ void * malloc (unsigned int uiTamanioDeseado) {
             uiTamanioDeseado, sizeof(t_nodoOcupado) );
 
     return (void *) ((char*)pDirBloque + sizeof(t_nodoOcupado));
+}
+
+
+/**
+\brief Reserva memoria dinamicamente inicializada en 0
+\param nTamanio Indica la cantidad de bytes de memoria que deseo reservar
+\returns Puntero a void que indica el comienzo del bloque de memoria reservada. En caso de no poder asignar la memoria devuelve NULL
+\date 22/10/2008
+*/
+void *calloc(unsigned int uiTamanio) {
+    void * pvRetorno;
+
+    pvRetorno = malloc(uiTamanio);
+    if(pvRetorno == NULL) {
+        return NULL;
+    }
+
+    return (void*)ucpFnMemSetCero( (unsigned char*)pvRetorno, uiTamanio );
 }
 
 
@@ -323,14 +354,18 @@ void vFnInsertarBloqueLibreEnListaOrd( t_nodo * pNuevoNodo ) {
 
 /**
  * @brief Busca un bloque de memoria libre de uiTamanio bytes
- * @param Tamanio en bytes del bloque libre buscado
+ * @param uiTamanioDeseado Tamanio en bytes del bloque libre buscado
+ * @param ppvBloqueMasAlto Direccion de retorno del bloque mas lejano al
+ * inicio del segmento
  * @returns La direccion del nodo de la lista de bloques libres QUE APUNTA al
  * bloque libre encontrado (nodo anterior) o la direccion del untlimo nodo de la
  * lista si no se encontraron bloques (se debe castear a t_nodo*)
- * @date 02/10/2008
+ * @date 22/10/2008
  */
-void * pvFnBuscarNodoAnteriorMemoriaLibre(unsigned int uiTamanioDeseado ) {
+void * pvFnBuscarNodoAnteriorMemoriaLibre(unsigned int uiTamanioDeseado,
+        t_nodo ** ppBloqueMasAlto) {
     t_nodo* pBloqueLibre;
+    t_nodo* pMasAlto;
 
     /* Se busca un bloque que pueda albergar el bloque
      * Si el nuevo bloque no entra 'justo' (justo = no sobra ni un byte), se
@@ -338,9 +373,17 @@ void * pvFnBuscarNodoAnteriorMemoriaLibre(unsigned int uiTamanioDeseado ) {
      * se tendra que insertar al 'partir' el bloque
      */
     pBloqueLibre = &stuListaBloquesLibres;
+    pMasAlto = pBloqueLibre->pNodoSig;
+
     while( pBloqueLibre->pNodoSig != NULL &&
          (pBloqueLibre->pNodoSig->nTamanio+sizeof(t_nodo))!= uiTamanioDeseado &&
           pBloqueLibre->pNodoSig->nTamanio < uiTamanioDeseado ) {
+
+                //Llevo la cuenta de cual es el bloque mas lejano al inicio
+                if( pBloqueLibre->pNodoSig > pMasAlto->pNodoSig ) {
+                    pMasAlto = pBloqueLibre;
+                }
+
                 pBloqueLibre = pBloqueLibre->pNodoSig;
     }
 
@@ -353,6 +396,12 @@ void * pvFnBuscarNodoAnteriorMemoriaLibre(unsigned int uiTamanioDeseado ) {
             //NO se encontro un bloque
             printf("\npvBuscar...: NO se encontro un bloque de memoria libre "
                     "de tamano suficiente");
+    }
+
+    //Si el usuario desea conocer cual es el bloque mas lejano al inicio, se lo
+    //devuelvo
+    if(ppBloqueMasAlto != NULL) {
+        *ppBloqueMasAlto = pMasAlto;
     }
 
     return (void *) pBloqueLibre;
@@ -405,3 +454,36 @@ void vFnMostrarMemLibreHeap()
     printf("\n\n");
 }
 
+
+
+// Esta funcion en realidad se usa de libk/string.h
+
+/**
+ * @brief Inicializa uiTamanio bytes a 0 desde la posicion ucpDirInicio
+ * @param ucpDirInicio Direccion de inicio
+ * @param uiTamanio Cantidad de bytes
+ * @date 22/10/2008
+ */
+inline unsigned char* ucpFnMemSetCero(
+        unsigned char *ucpDirInicio,
+        unsigned int uiTamanio )
+{
+    int d0, d1;
+
+    __asm__ __volatile__(
+        "xor %%eax, %%eax\n\t"
+        "rep ; stosl\n\t"
+        "testb $2,%b3\n\t"
+        "je 1f\n\t"
+        "stosw\n"
+        "1:\ttestb $1,%b3\n\t"
+        "je 2f\n\t"
+        "stosb\n"
+        "2:"
+        : "=&c" (d0), "=&D" (d1)
+        :"0" (uiTamanio/4), "q" (uiTamanio),
+            "1" ((long) ucpDirInicio)
+        : "%eax", "memory");
+
+    return ucpDirInicio;
+}

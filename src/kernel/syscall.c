@@ -282,6 +282,7 @@ long lFnSysKill(int pid, int sig)
         vFnImprimir("\nSe recibio SIGSEGV en el Proceso PID=%d \"%s\" ",
                 pstuPCB[iPosicionPCB].ulId, pstuPCB[iPosicionPCB].stNombre);
         goto eliminarproceso; //TODO - Cambiar por un tratamiento man apropiado
+	case (SIGINT):
 	case (SIGTERM):
 	case (SIGKILL):
 eliminarproceso:

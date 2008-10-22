@@ -64,7 +64,7 @@ int main() {
     vFnMostrarMemLibreHeap();
 
     free(p2);
-    printf("\nLiberando 6000\n");
+    printf("\nLiberando 10000\n");
     vFnMostrarMemLibreHeap();
 
     

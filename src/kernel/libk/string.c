@@ -38,6 +38,37 @@ inline unsigned char* ucpFnCopiarMemoria(
 
 
 /**
+ * @brief Inicializa uiTamanio bytes a 0 desde la posicion ucpDirInicio
+ * @param ucpDirInicio Direccion de inicio
+ * @param uiTamanio Cantidad de bytes
+ * @date 
+ */
+inline unsigned char* ucpFnMemSetCero(
+        unsigned char *ucpDirInicio,
+        unsigned int uiTamanio )
+{
+    int d0, d1;
+
+    __asm__ __volatile__(
+        "xor %%eax, %%eax\n\t"
+        "rep ; stosl\n\t"
+        "testb $2,%b3\n\t"
+        "je 1f\n\t"
+        "stosw\n"
+        "1:\ttestb $1,%b3\n\t"
+        "je 2f\n\t"
+        "stosb\n"
+        "2:"
+        : "=&c" (d0), "=&D" (d1)
+        :"0" (uiTamanio/4), "q" (uiTamanio),
+            "1" ((long) ucpDirInicio)
+        : "%eax", "memory");
+
+    return ucpDirInicio;
+}
+
+
+/**
  * iFnCompararCadenas: compara dos cadenas
  * @param cnstCadena1 primer cadena a comparar
  * @param cnstCadena2 segunda cadena a comparar
