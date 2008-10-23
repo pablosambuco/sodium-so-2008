@@ -1026,18 +1026,22 @@ vFnImprimir( "\n fork(): EAX (modificado): %x", stuTSSTablaTareas[iPosicion].eax
  * @brief Reemplaza el proceso indicado y ejecuta desde "cero"
  * @param ulPid PID del proceso a reemplazar
  * @param stArchivo Nombre del archivo binario por el cual reemplazar
- * @returns La posicion dentro de la tabla de PCBs del proceso modificado
+ * @returns El PID del proceso modificado (ver nota al final del codigo), o un codigo de error
  */
-int iFnReemplazarProceso(
-        unsigned long ulPid,
-        char * stArchivo
-/*        unsigned int uiProceso,
-        unsigned char *ucpCodigo,
-        unsigned int uiTamanio */) {
-#if 0    
+int iFnReemplazarProceso( unsigned long ulPid, char * stArchivo ) {
     unsigned int uiESPOriginal,
              uiStackUsuario,
+             uiNuevoStackUsuario,
              uiComienzoStackKernel;
+
+    unsigned int uiBaseSegmento;
+    unsigned int uiTamSegCodigo;
+    unsigned int uiTamSegDatos;
+    unsigned int uiTamStack;
+    unsigned int uiTamInicializados;
+    stuInfoEjecutable stuInfoExe;
+
+    stuPCB* pPCB;
 
     /* No deshabilitamos las interrupciones porque esta funcion se invoca desde
      * el syscall execve(), que a su vez es llamado por el handler de la int
@@ -1045,38 +1049,58 @@ int iFnReemplazarProceso(
      * se deshabilitan las demas
      */
 
+    //Se lee la cabecera del archivo binario
+    if( iFnLeerCabeceraEjecutable(stArchivo, &stuInfoExe) == -1) {
+        return -1;
+    }
+  
+    //Vamos a crear descriptores con granularidad 4K, por ello convertimos los
+    //datos leidos del binario a granularidad 4K
+    uiTamSegCodigo     = REDONDEAR_HACIA_ARRIBA_A_4K(stuInfoExe.uiTamanioTexto);
+    uiTamStack         = REDONDEAR_HACIA_ARRIBA_A_4K(stuInfoExe.uiTamanioStack);
+    uiTamInicializados = REDONDEAR_HACIA_ARRIBA_A_4K(stuInfoExe.uiTamanioDatosInicializados);
+    uiTamSegDatos      = REDONDEAR_HACIA_ARRIBA_A_4K(uiTamSegCodigo + uiTamStack + uiTamInicializados); //Se crea sin Heap
 
-
-
-
-
-
-
-
-    /* No buscamos un segmento libre, ni buscamos entradas disponibles en la GDT     * porque lo unico que tenemos q realizar es reemplazar el codigo del
-     * proceso indicado, y resetear el estado, para arrancar este nuevo programa
-     * desde "cero" */
-
-
-
-
-
-
-
-
-
-
-    /* Copio todo el segmento de codigo al segmento del proceso actual */
-    ucpFnCopiarMemoria( (unsigned char*)pstuPCB[uiProceso].uiDirBase,
-                        ucpCodigo,
-                        uiTamanio );
-
-
-    /* TODO - REVISAR
-     * Que pasa si el codigo a copiar no entra en el segmento actual del proceso
-     * a modificar?
+    /* No buscamos entradas disponibles en la GDT porque lo unico que tenemos
+     * que realizar es reemplazar el codigo del proceso indicado, y resetear el
+     * estado, para arrancar este nuevo programa desde "cero"
      */
 
+    /* TENEMOS que alojar el 'nuevo programa' en un nuevo espacio de memoria
+     * porque sus segmentos de codigo y datos seran de diferente tamanio que los
+     * del original (no siempre, pero casi siempre)
+     */
+
+    // Se reserva la memoria para el proceso (se usa un unico segmento para
+    // Codigo y Datos)
+    uiBaseSegmento = (unsigned int) pvFnReservarSegmento( uiTamSegDatos );
+    
+    if( uiBaseSegmento == NULL ) {
+        return -ENOMEM;
+    }
+
+    // En teoria, si pude reservar el espacio en memoria, ya nada puede fallar
+    // Ya se puede modificar el proceso original
+
+    pPCB = &pstuPCB[ iFnBuscaPosicionProc(ulPid) ];
+ 
+    /* Debo cambiar los descriptores de segmento del proceso para que apunten a 
+     * la nueva ubicacion (y nuevo tamanio) de los segmentos
+     */
+    uiFnSetearBaseLimiteDescriptor(pPCB->uiIndiceGDT_CS, uiBaseSegmento,
+            EN_GRANULARIDAD_4K(uiTamSegCodigo) - 1 );
+    uiFnSetearBaseLimiteDescriptor(pPCB->uiIndiceGDT_DS, uiBaseSegmento,
+            EN_GRANULARIDAD_4K(uiTamSegDatos) - 1 );
+
+    /* COPIA de CODIGO */ 
+
+    vFnLog("\niFnReemplazarProceso: Copiando el codigo del proceso \"%s\" de "
+            "0x%x a 0x%x, ocupa %d bytes", stuInfoExe.stNombre,
+            stuInfoExe.pvPuntoCarga, uiBaseSegmento, stuInfoExe.uiTamanioTexto);
+    ucpFnCopiarMemoria(
+        (unsigned char*)uiBaseSegmento,
+        (unsigned char*)stuInfoExe.pvPuntoCarga,
+        stuInfoExe.uiTamanioTexto );
 
     /* La TSS no se altera; no tiene sentido alterar la TSS del proceso, ya que
      * en el momento que se haga context-switch a otro proceso, lo que este
@@ -1093,12 +1117,12 @@ int iFnReemplazarProceso(
     /* Ahora comenzamos a copiar los valores de los registros, sacandolos de lo
      * que se fue apilando al momento de comenzar el manejo de la syscall
      */
-    /* El comienzo del stack del kernel se calcula en **system_asm.asm**,
-     * cualquier cambio ahi (que implique desplazar el stack), debe contemplarse
-     * aqui ya que este calculo resultaria invalido
+    /* ADVERTENCIA: El comienzo del stack del kernel se calcula en 
+     * **system_asm.asm**, cualquier cambio ahi (que implique desplazar el
+     * stack), debe contemplarse aqui ya que este calculo resultaria invalido
      */
-    uiComienzoStackKernel = 0x200000 - 0x08 - 0x100 
-                * ((pstuPCB[uiProceso].uiIndiceGDT_TSS * 8)-0x20);
+    uiComienzoStackKernel = 0x200000 - 0x08 - 0x100  *
+                                            ((pPCB->uiIndiceGDT_TSS * 8)-0x20);
     
     /* Extraemos del stack del kernel, el ESP original: */
     uiESPOriginal = *(unsigned int*)(uiComienzoStackKernel-0x08);
@@ -1107,33 +1131,107 @@ int iFnReemplazarProceso(
      * segmento del proceso (de su PCB) y el valor de ESP (apilado en el stack
      * del kernel)
      */
-    uiStackUsuario = pstuPCB[uiProceso].uiDirBase + uiESPOriginal;
-   
-    //TODO - Actualizar a segmentos variables(aunque ya estaba comentado, por?):
-    //*(unsigned int*)(uiComienzoStackKernel-0x08) = SEGMENT_SIZE - 0x10; // ESP
-    //*(unsigned int*)(uiComienzoStackKernel-0x0c) = SEGMENT_SIZE - 0x10; // EBP
+    uiStackUsuario = pPCB->uiDirBase + uiESPOriginal;
+
+    /* ADVERTENCIA: Los calculos para el manejo de Stack se basan sobre todo en
+     * lo que APILAN las siguientes funciones/macros (en orden de invocacion):
+     *      (Stack de usuario)
+     *          execve / SYS_CALL_3 (INT 0x80)
+     *          ENTRADA_STACK_KRNL
+     *
+     *      (Stack Kernel)
+     *          ENTRADA_STACK_KRNL
+     *          lFnHandlerSyscall
+     *
+     * ADVERTENCIA: Un cambio en las funciones anteriores (o sus reciprocas para
+     * el momento de 'volver') altera los valores usados a continuacion.
+     */
+    /* La mejor forma de comprender el manejo de la pila es hacer un diagrama
+     * completo de los dos stackas (kernel y usuario) con todos los pushs
+     * Algunas ayudas: (TOOODOS los valores en hexa)
+     *
+     * Stack usuario:
+     *
+     * 0x28 Es el alto de la pila de usuario que tiene (del tope a la base):
+     *      StkUsr +00    +04  +08  +0c  +10  +14  +18  +1C  +20  +24     +28
+     *               EFLAGS  ESI  EDI  GS   FS   ES   DS   EIP  CS   EFLAGS
+     * 0x10 Parametros pasados al ejecutable EBP+XX (por el Shell?)
+     *      StkUsr +0x28   +0x2c   +0x30   +0x34   +0x38
+     *                 Param   Param   Param   Param         (0x38-0x28 = 0x10)
+     *
+     * Stack kernel:
+     *
+     *  -   Del tope (no aparece, faltan diez apilamientos) a la base
+     *      ... -1c -18 -14 -10 -0c -08 -04 00  ComienzoStackKernel
+     *      ...   EAX EBX ECX EDX EBP EDI ESI
+     *                                (*) (*)
+     *
+     *      (*) Los valores de EDI y ESI se usan en realidad como ESP y SS
+     *          respectivamente (ver ENTRADA_STACK_KRNL)
+     */
+
+    uiNuevoStackUsuario = uiBaseSegmento + uiTamSegDatos - 0x28 - 0x10;
+    // IDEM: uiBaseSegmento + (uiTamSegDatos - pPCB->uiLimite) + uiESPOriginal;
+  
+    /* Reapuntamos ESP y EBP para la vuelta con SALIDA_STACK_KRNL, cuando
+     * volvamos al proceso (se calculan con los nuevos tamanos de segmento)
+     */
+    *(unsigned int*)(uiComienzoStackKernel-0x08) =
+                                uiNuevoStackUsuario - uiBaseSegmento;    // ESP
+
+    *(unsigned int*)(uiComienzoStackKernel-0x0c) = uiTamSegDatos - 0x10; // EBP
 
     *(unsigned int*)(uiComienzoStackKernel-0x10) = 0x00; /* EDX */
     *(unsigned int*)(uiComienzoStackKernel-0x14) = 0x00; /* ECX */
     *(unsigned int*)(uiComienzoStackKernel-0x18) = 0x00; /* EBX */
     *(unsigned int*)(uiComienzoStackKernel-0x18) = 0x00; /* EAX */ 
 
-    *(unsigned int*)(uiStackUsuario+0x04) = 0x00;   /* EDI */ 
-    *(unsigned int*)(uiStackUsuario+0x08) = 0x00;   /* ESI */
-    *(unsigned int*)(uiStackUsuario+0x1c) = 0x00;   /* EIP */
-    *(unsigned int*)(uiStackUsuario+0x24) = 0x202L; /* EFLAGS */
+    /* Las modificaciones en el Stack del usuario deben hacerse en el nuevo
+     * segmento de datos, por lo que primero lo copiamos (solo el stack) desde
+     * el segmento original (ya que no cambiaremos todos sus datos)
+     */
+    ucpFnCopiarMemoria(
+        (unsigned char*)uiNuevoStackUsuario,
+        (unsigned char*)uiStackUsuario,
+        0x28 ); //TODO: Ver: no copiamos los 'parametros' (EBP+XX)
+
+    // Y ahora se trabaja sobre el stack de usuario del nuevo segmento
+    *(unsigned int*)(uiNuevoStackUsuario+0x04) = 0x00;   /* ESI */ 
+    *(unsigned int*)(uiNuevoStackUsuario+0x08) = 0x00;   /* EDI */
+    *(unsigned int*)(uiNuevoStackUsuario+0x1c) = 0x00;   /* EIP */
+    *(unsigned int*)(uiNuevoStackUsuario+0x24) = 0x202L; /* EFLAGS */
 
     //TODO - Limpiar valores de FPU
+    
+    // Ya podemos liberar el bloque de memoria que ocupaba el proceso
+    vFnLiberarSegmento( (void *)(pPCB->uiDirBase) );
+
+    /* PCB */
+
+    /* TODO: Actualizar lo que falte actualizar en el PCB
+     * Solo hay que cambiar en el PCB lo que haya que cambiar; ver: man execve
+     */
+    pPCB->vFnFuncion    = 0x00;
+    pPCB->uiTamProc     = uiTamSegDatos;
+    pPCB->uiDirBase     = uiBaseSegmento;
+    pPCB->uiLimite      = uiTamSegDatos;
+    pPCB->uiTamanioTexto                = uiTamSegCodigo;
+    pPCB->uiTamanioDatosInicializados   = uiTamInicializados;
+    pPCB->uiTamanioStack                = uiTamStack;
+
+    // TODO: Liberar todos los recursos que haya que liberar
 
     //Desadjuntamos todas las memorias compartidas
-    iFnShmDtAllProc( pstuPCB[ uiProceso ].ulId );
+    iFnShmDtAllProc( ulPid );
 
-    return (int) uiProceso;
-#endif    
+    // LISTO!
+    /* En realidad, si execve no falla, no retorna nada (el nuevo programa ni
+     * siquiera sabe que se llamo a execve). Esta devolucion se pierde por los
+     * manejos del stack anteriores, pero es necesaria para que compile (podemos
+     * devolver cualquier cosa)
+     */
+    return (int) ulPid;
 }
-
-
-
 
 
 /**

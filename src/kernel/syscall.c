@@ -195,33 +195,15 @@ Descripcion:
 Recibe:   
 Devuelve: 
 *******************************************************************************/
-long lFnSysExecve(const char *filename, char *const argv[],
-		  char *const envp[])
+long lFnSysExecve(const char *filename, char *const argv[], char *const envp[])
 {
 	stEntradaLS *pstEntLs;
 	stDirectorio *pstDirBusqueda;
-	char* strNombreArchivo =(char*)((unsigned int)pstuPCB[ulProcActual].uiDirBase + (unsigned int)filename);
+	char* strNombreArchivo =
+        (char*)(pstuPCB[ulProcActual].uiDirBase + (unsigned int)filename );
 
-/* TODO - lala - Terminar de sacar
-    if (iFnObtenerDirectorio("/mnt/usr", &pstDirBusqueda) < 0) {
-		vFnImprimir
-		    ("\nSodium Dice: Error! El directorio no existe");
-		return -ENOENT;
-	}
-
-	if (iFnBuscarArchivo(pstDirBusqueda, strNombreArchivo, &pstEntLs) < 0) {
-		vFnImprimir
-		    ("\nSodium Dice: Error! Archivo no encontrado (%s)",
-		     strNombreArchivo);
-		return -ENOENT;
-	}
-	iFnReemplazarProceso(ulProcActual,
-			     (unsigned char*) DIR_LINEAL(pstEntLs->wSeg, pstEntLs->wOff), 
-			     pstEntLs->dwTamanio);
-*/
-//      iFnReemplazarProceso( ulProcActual, __prog_begin(), __prog_size() );
-
-      iFnReemplazarProceso( pstuPCB[ulProcActual].ulId, strNombreArchivo );
+    //TODO - Pasar parametros restantes: argv y envp
+    iFnReemplazarProceso( pstuPCB[ulProcActual].ulId, strNombreArchivo );
 
 	return 0;
 }

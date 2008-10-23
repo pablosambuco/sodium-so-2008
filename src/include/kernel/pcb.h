@@ -31,7 +31,7 @@ typedef struct _stuPCB_{
     int iExitStatus;
     unsigned long ulLugarTSS;
     char stNombre[25];
-    unsigned int uiTamProc;
+    unsigned int uiTamProc;         //TODO! Deprecar por uiLimite
     struct stuTablaPagina * pstuTablaPaginacion;
     unsigned int uiDirBase,         /*!< direccion base de memoria (absoluta) */
 	             uiLimite;  /*!< LONGITUD de memoria (NO existe granularidad). Se usa tambien como direccion de BRK (primer posicion no direccionable por el proceso) */
