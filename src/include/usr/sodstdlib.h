@@ -19,8 +19,6 @@
 #ifndef __SODSTDLIB_H_
 #define __SODSTDLIB_H_
 
-//#include <kernel/definiciones.h>
-
 /*dword dwFnCtod (char *stBuffer);
 word wFnCtow (char *stBuffer);
 byte byFnCtob (char *stBuffer);

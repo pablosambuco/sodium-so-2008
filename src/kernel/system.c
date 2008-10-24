@@ -348,8 +348,6 @@ vFnExcepcionCPU12 ()
 \note Esta funcion es llamada por vFnExcepcionCPU13_Asm
 */
 void vFnExcepcionCPU13 () {
-    //TODO - Borrar esta variable si no se esta usando
-    //int iPCBPadre;
    
     vFnImprimir("\nExcepcion de Proteccion General (ExcepcionCPU13):");
     vFnMostrarRegistrosvCPU ();

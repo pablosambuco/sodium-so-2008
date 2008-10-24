@@ -8,8 +8,7 @@
 #include <kernel/syscall.h>
 #include <usr/memoria_dinamica.h>
 
-//TODO - Generar archivo de definiciones propio de lado usuario
-#include <kernel/definiciones.h>    //Tipos de variables, NULL, etc 
+#include <usr/tipos.h>  //Tipos de variables 
 
 #define RR 1
 #define FIFO 0

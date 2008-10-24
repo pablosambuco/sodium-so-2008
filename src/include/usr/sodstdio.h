@@ -20,13 +20,7 @@
 #ifndef __SODSTDIO_H_
 #define __SODSTDIO_H_
 
-//TODO - Quizas sea necesario incluir el archivo definiciones.h
-//       o generar un nuevo archivo .h con las definiciones de tipos 
-//       por ejemplo:
-//          typedef unsigned int dword;
-//          typedef unsigned short word;
-//          typedef unsigned char byte;
-//
+#include <usr/tipos.h>
 
 /**
  * \brief Imprime la cadena que recibe como argumento

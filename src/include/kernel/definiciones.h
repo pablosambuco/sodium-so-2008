@@ -1,16 +1,12 @@
-
 /**
  * \file kernel/definiciones.h
  * \brief Definiciones generales.
- *
- * esta biblioteca contiene las definiciones de tipo de datos necesarias
- * para trabajar con bytes, words y double words (referenciar los mismos
- * datos de assembler desde C)
  */
 
 #ifndef _DEFINICIONES_H_
 #define _DEFINICIONES_H_
 
+#include <usr/tipos.h> /* Inclusion de tipos de datos */
 
 #define VERSION_SODIUM "0.82" /*!< Version Sodium*/
 
@@ -48,26 +44,6 @@
 //---------------------------------------------------------------
 
 #define  LOG_HISTORIA   25 /*!<Define la cantidad de lineas de profundidad del buffer del log. */
-
-
-typedef unsigned int dword;
-typedef unsigned short word;
-typedef unsigned char byte;
-
-typedef unsigned char 	u8;
-typedef signed	 char 	s8;
-typedef unsigned short	u16;
-typedef signed	 short	s16; 
-typedef unsigned int		u32; 
-typedef signed	 int		s32; 
-
-//Registros de 80 bits, utilizados por la FPU
-typedef struct _u80 { unsigned int word[20]; }	u80; 
-
-#define PByte(Direccion)	((u8)(Direccion))
-#define SByte(Direccion)	((u8)(Direccion >> 8 ))
-#define TByte(Direccion)	((u8)(Direccion >> 16))
-#define CByte(Direccion)	((u8)(Direccion >> 24))
 
 // La memoria ALTA comienza en 2MB, la BAJA comienza donde terminan las estructuras del kernel
 #define INICIO_MEMORIA_ALTA 0x200000

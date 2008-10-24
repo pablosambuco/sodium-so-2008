@@ -197,10 +197,7 @@ Devuelve:
 *******************************************************************************/
 long lFnSysExecve(const char *filename, char *const argv[], char *const envp[])
 {
-	//TODO - Borrar estas variables si no se usan
-	//stEntradaLS *pstEntLs;
-	//stDirectorio *pstDirBusqueda;
-	char* strNombreArchivo =
+   char* strNombreArchivo =
         (char*)(pstuPCB[ulProcActual].uiDirBase + (unsigned int)filename );
 
     //TODO - Pasar parametros restantes: argv y envp
