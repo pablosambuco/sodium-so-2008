@@ -12,7 +12,7 @@ static void *pvBrkActual = NULL;
 int brk(void *pvLimite) {
     void *pvBrkNuevo;
   
-    pvBrkNuevo = __brk( pvLimite );
+    pvBrkNuevo = (void *) __brk( (unsigned long) pvLimite );
     /* Diferencia con glibc: NO ASUMIMOS QUE __brk ESTABLEZCA LA DIRECCION DE
      * CORTE (ulLimite) SOLICITADA
      * Sodium no garantiza que la direccion ulLimite sea identica a la que
@@ -42,14 +42,14 @@ void * sbrk(int iIncremento) {
     void *pvBrkAnterior, *pvBrkNuevo;
   
     if ( pvBrkActual == NULL ) {
-        pvBrkActual = __brk(NULL);
+        pvBrkActual = (void *)__brk(NULL);
     }
 
     if ( iIncremento == 0 ) {
         return pvBrkActual;
     }
 
-    pvBrkNuevo = __brk( pvBrkActual + iIncremento );
+    pvBrkNuevo = (void *) __brk(  (unsigned long) pvBrkActual + iIncremento );
   
     /*iFnImprimir_usr(" [%d]", (unsigned int)pvBrkActual);
     iFnImprimir_usr(" +%d", (unsigned int)iIncremento);

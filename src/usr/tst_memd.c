@@ -8,11 +8,12 @@ int main(){
     void * pvPuntero2;
     void * pvPuntero3;
 
-    char * pcBrk;
+#ifdef DEBUG_BRK
+    
+    char * pcBrk; 
 
     /* Probando limites del segmento */
 
-#ifdef DEBUG_BRK
     /* Obtenemos la direccion de BRK de nuestro segmento. Dicha direccion es la
      * siguiente a la ultima de nustro segmento, por lo que si intentamos
      * acceder a una direccion >= BRK obtendremos 'Segmentation Fault'
