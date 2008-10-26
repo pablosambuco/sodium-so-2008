@@ -45,12 +45,8 @@
 
 #define  LOG_HISTORIA   25 /*!<Define la cantidad de lineas de profundidad del buffer del log. */
 
-// La memoria ALTA comienza en 2MB, la BAJA comienza donde terminan las estructuras del kernel
-#define INICIO_MEMORIA_ALTA 0x200000
-
-// CHAU El heap del kernel incluye los discos RAM
-//#define TAMANIO_HEAP_KERNEL 0x400000
-
+// La memoria ALTA comienza en 1MB, la BAJA comienza donde terminan las estructuras del kernel
+#define INICIO_MEMORIA_ALTA 0x100000
 
 
 #endif //_DEFINICIONES_H_

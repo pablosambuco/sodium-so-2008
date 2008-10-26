@@ -37,6 +37,8 @@ typedef struct nodoOcupado
 } t_nodoOcupado;
 
 
+unsigned int uiMemoriaDisponibleProcesos;
+
 
 void vFnIniciarKMem();
 

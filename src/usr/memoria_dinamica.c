@@ -7,8 +7,30 @@
 #include <usr/sodstdio.h>
 
 
-/* TODO
- * Describir la estrategia de Gestion de Memoria Dinamica a nivel usuario
+/*
+ * Estrategia de Gestion de Memoria Dinamica a nivel usuario:
+ *
+ * - Se mantiene una lista de bloques libres, ordenada por tamano de bloque
+ *   ascendente. El nodo inicial es la variable stuListaBloquesLibres.
+ *
+ * - Al realizar malloc se busca el primer bloque que pueda alojar la memoria
+ *   requerida + la informacion de control asociada; por lo tanto la estrategia
+ *   es BEST-FIT (First-Fit con lista ordenada).
+ *
+ * - Se comienza con un Heap de 0 bytes y cada vez que se necesita mas memoria
+ *   dinamica se llama a iFnAgrandarHeap
+ *
+ * - Al realizar free, se libera un bloque de memoria dinamica de la siguiente
+ *   manera:
+ *     (1) si el bloque a liberar NO tiene bloques libres adyacentes, se crea un
+ *         nuevo bloque, y se inserta en la lista ordenada de bloques libres
+ *     (2) si el bloque a liberar tiene bloques libres adyacentes, se acoplan
+ *         dichos bloques al bloque nuevo formando un unico bloque, se quita de
+ *         la lista y se lo reinserta en la lista ordenada de bloques libres
+ *
+ * - Al realizar realloc se hace un malloc y (si fue exitos) un free.
+ *
+ * - Al realizar calloc se hace un malloc y luego se unicializa en 0 el bloque.
  */
 
 

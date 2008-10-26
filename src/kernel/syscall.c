@@ -1175,7 +1175,7 @@ unsigned long ulFnSysBrk(unsigned long ulBrk) {
 
     //Intenta redimensionar, y si hay error devuelve NULL
     if( iFnRedimensionarProceso(ulPid, ulBrk) == -1 ) {
-        //TODO - lala - donde asignar errno = EAGAIN o ENOMEM
+        //TODO asignar errno = EAGAIN o ENOMEM
         return NULL;
     }
 

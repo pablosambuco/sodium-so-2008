@@ -4,9 +4,54 @@
 #include <kernel/system.h>
 
 
+/*
+ * Estrategia de Gestion de Memoria Dinamica a nivel kernel:
+ *
+ * - Se mantienen dos listas de bloques libres, una para memoria convencional y
+ *   otra para memoria alta. Ambas estan ordenadas por direccion inicial de
+ *   bloque ascendente. Los nodos iniciales son las variables
+ *   InicioMemoriaKernel e InicioMemoriaAlta
+ *
+ * - Al realizar malloc se busca el primer bloque que pueda alojar la memoria
+ *   requerida + la informacion de control asociada; por lo tanto la estrategia
+ *   es FIRST-FIT.
+ *   kmalloc recibe como parametro un entero que posee varias banderas e indica
+ *   (hoy en dia):
+ *      - En que lista reservar la memoria solicitada.
+ *      - El uso que se le dara a la memoria solicitada. Basicamente, kernel o
+ *        usuario (los bloques para procesos usuario son reubicables y un
+ *        algoritmo de defragmentacion podria moverlos si reapunta la PCB y los
+ *        descriptores de la GDT de dichos procesos).
+ *
+ * - Al realizar kfree, se libera un bloque de memoria dinamica de la siguiente
+ *   manera:
+ *      (1) si el bloque a liberar NO tiene bloques libres adyacentes, se crea
+ *          un nuevo bloque, y se inserta en la lista ordenada de bloques libres
+ *      (2) si el bloque a liberar tiene bloques libres adyacentes, se acoplan
+ *          dichos bloques al bloque nuevo formando un unico bloque
+ *
+ * - Al realizar krealloc se hace:
+ *      (1) si la lista a la que se desea hacer realloc es diferente a la
+ *          original (mover de memoria convencional a alta o viceversa), se
+ *          realiza un kmalloc y (si fue exitos) un kfree.
+ *      (2) si la lista a la que se desea hacer realloc es la misma que la
+ *          original: 
+ *              (2A) si el nuevo tamanio es mayor al original, se realiza un
+ *                   kmalloc (con las nuevas opciones) y (si fue exitoso) un
+ *                   kfree.
+ *              (2B) si el nuevo tamanio es menor al original, el bloque se deja
+ *                   intacto. TODO: No se contemplan cambios en el campo de
+ *                   opciones del bloque.
+ *
+ * - Al realizar kcalloc se hace un kmalloc y luego se unicializa en 0 el bloque
+ *
+ */
+
+
+
 extern unsigned int uiTamanioMemoriaBaja;
 extern unsigned int uiTamanioMemoriaBios;
-
+extern unsigned int uiMemoriaDisponibleProcesos;
 
 /**
 \brief Inicializa la tabla de bloques libres del kernel
@@ -14,7 +59,6 @@ extern unsigned int uiTamanioMemoriaBios;
 */
 void vFnIniciarKMem()
 {
-//TODO lala - Actualizar el footprint para que refleje los cambios hechos:
 /* 
  * El footprint del sodium en memoria es similar al siguiente:
  * USO DE MEMORIA DESDE 0x0:
@@ -54,6 +98,9 @@ void vFnIniciarKMem()
     ((t_nodo *) InicioMemoriaAlta.pNodoSig)->nTamanio = 
 	    uiTamanioMemoriaBios - (unsigned int) InicioMemoriaAlta.pNodoSig;
 	((t_nodo *) InicioMemoriaAlta.pNodoSig)->pNodoSig = NULL;
+
+    uiMemoriaDisponibleProcesos =
+        uiTamanioMemoriaBios - (unsigned int) InicioMemoriaAlta.pNodoSig;
 
 }
 
@@ -107,10 +154,16 @@ void *pvFnKMalloc(dword nTamanio, unsigned int uiOpciones)
 
             // El tipo de memoria KERNEL/USUARIO se usa para saber si el bloque 
             // de memoria se puede reubicar
-			pNodoOcupado->uiOpciones = GET_MEM_KERNEL_USUARIO(uiOpciones);
+			//pNodoOcupado->uiOpciones = GET_MEM_KERNEL_USUARIO(uiOpciones);
+			pNodoOcupado->uiOpciones = uiOpciones;
 			
 			vFnLog("\npvFnKMalloc: Asignando %dKb en el Heap del Kernel",
                     pNodoOcupado->nTamanio >> 10);
+
+            if( GET_MEM_ALTA_BAJA(uiOpciones) == MEM_ALTA ) {
+                uiMemoriaDisponibleProcesos -= nTamanio + sizeof(t_nodoOcupado);
+            }
+
 			return ((void *) ((void *) pNodoOcupado + sizeof(t_nodoOcupado)));
 		}
 		//Si no hay espacio en el bloque actual avanzo al siguiente
@@ -173,14 +226,23 @@ void *pvFnKRealloc( void *pBloqueAModificar,
           ( (char*)pBloqueAModificar - sizeof(t_nodoOcupado) )) -> nTamanio;
 
     // 3 Hay que achicar (o dejar igual) el bloque
-    // Decidimos no hacerlo, para evitar fragmentacion (si linux lo hace...)
-    if( uiNuevoTamanio <= uiTamanioOriginal) {
-        vFnLog("\npvFnKRealloc: Achicando un bloque de %d bytes a %d bytes",
-                uiTamanioOriginal, uiNuevoTamanio);
-        return pBloqueAModificar;
+    // (y NO moverlo de memoria convencional a alta, o viceversa)
+    if( GET_MEM_ALTA_BAJA(((t_nodoOcupado*)pBloqueAModificar)->uiOpciones) ==
+        GET_MEM_ALTA_BAJA(uiOpciones) ) {
+
+        // Decidimos no hacerlo, para evitar fragmentacion (si linux lo hace...)
+        if( uiNuevoTamanio <= uiTamanioOriginal) {
+            //TODO: Que pasa si el resto de las opciones del bloque (ademas de
+            //memoria alta/baja) NO son iguales ?
+
+            vFnLog("\npvFnKRealloc: Achicando un bloque de %d bytes a %d bytes",
+                    uiTamanioOriginal, uiNuevoTamanio);
+            return pBloqueAModificar;
+        }
     }
 
     // 4 Hay que agrandar bloque
+    // (o moverlo de memoria convencional a alta, o viceversa)
     pNuevoBloque = pvFnKMalloc( uiNuevoTamanio, uiOpciones );
     if( pNuevoBloque == NULL ) {
         //errno = ENOMEM;
@@ -222,12 +284,13 @@ void vFnKFree(void *pNodoALiberar) {
 
     //En función de la dirección de memoria del bloque a liberar, decido que
     //lista usar. Puede ser la de memoria baja o la de memoria alta.
-
-    //TODO - Reemplazar constante por define
-    if ((dword) pNodoALiberar < 0x100000) {
+    //Tambien podria usar algo como GET_MEM_ALTA_BAJA(pNodoALiberar.uiOpciones)
+    if ((dword) pNodoALiberar < INICIO_MEMORIA_ALTA) {
         pUltimoNodo = &InicioMemoriaKernel;
     } else {
         pUltimoNodo = &InicioMemoriaAlta;
+        uiMemoriaDisponibleProcesos +=
+            ((t_nodo*)pNodoALiberar)->nTamanio + sizeof(t_nodoOcupado);
     }
 
     //Busco el bloque libre mas cercano por ARRIBA del bloque a liberar

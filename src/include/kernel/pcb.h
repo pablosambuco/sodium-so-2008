@@ -52,6 +52,9 @@ typedef struct _stuPCB_{
     unsigned int uiTamanioTexto;/*!< Bytes de codigo ejecutable */
     unsigned int uiTamanioDatosInicializados;/*!< Bytes de datos globales inicializados (incluye BSS al final)*/
     unsigned int uiTamanioStack;/*!< Bytes de stack (libres+usados) */
+
+    unsigned int uiTamanioOverhead;     /*!< Bytes de Overhead (frag. interna)*/
+
     //Fin Agregado 2008
 }stuPCB;
 

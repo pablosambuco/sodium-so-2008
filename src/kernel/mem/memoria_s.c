@@ -2,20 +2,7 @@
 #include <kernel/mem/memoria_k.h>
 
 
-/* TODO
- * Revisar las variables:
- *  - ulMemoriaBase: deberia valer INICIO_MEMORIA_ALTA + TAMANIO_HEAP_KERNEL
- *  - ulMemoriaTope: no deberia estar hardcodeado, deberia ser lo informado por
- *                   la BIOS
- */
-
-/* TODO
- * Describir la estrategia utilizada para administracion de memoria
- */
-
-
-/**
- */
+/** */
 void vFnInicializarMemoriaSegmentada() {
 }
 

@@ -366,11 +366,8 @@ void vFnShell()
 		char strPID[16], strSIG[16];
 		int iPID, iSIG;
 
-		if ((iFnGetArg
-		     (iComandoPos, 1, strPID, sizeof(strPID)) == 1)) {
-			if ((iFnGetArg
-			     (iComandoPos, 2, strSIG,
-			      sizeof(strSIG)) == 1)) {
+		if ((iFnGetArg(iComandoPos, 1, strPID, sizeof(strPID)) == 1)) {
+			if ((iFnGetArg(iComandoPos, 2, strSIG, sizeof(strSIG)) == 1)) {
 				iPID = iFnCtoi(strPID);
 				iSIG = iFnCtoi(strSIG);
 				vFnImprimir
@@ -724,7 +721,16 @@ void vFnMenuAyuda()
 	vFnImprimir("\nCmd>cambiateclado [NUMERO_DISTRIBUCION | CODIGO_DISTRIBUCION]");
 	vFnSysSetearColor(HWND_COMANDO, BLANCO);
 	vFnImprimir("\nCambia la configuracion del teclado. Si se ejecuta sin parametros muestra las distribuciones disponibles");
+
+	vFnSysSetearColor(HWND_COMANDO, BLANCO_BRILLANTE);
+	SHELL_INTERACTIVO;
+	vFnMenuCls();
 	
+	vFnSysSetearColor(HWND_COMANDO, BLANCO_BRILLANTE);
+	vFnImprimir("\nCmd>ejecutar ARCHIVO");
+	vFnSysSetearColor(HWND_COMANDO, BLANCO);
+	vFnImprimir("\nEjecuta ARCHIVO.BIN (se debe omitir la extension en la invocacion). Si el archivo pasado por parametro no es un ejecutable correctamente compilado, los resultados son impredecibles");
+
 	vFnSysSetearColor(HWND_COMANDO, BLANCO_BRILLANTE);
 	SHELL_INTERACTIVO;
 	vFnMenuCls();
@@ -749,7 +755,7 @@ void vFnMenuAyuda()
 		vFnSysSetearColor(HWND_COMANDO, BLANCO_BRILLANTE);
 		vFnImprimir("\nCmd>segs");
 		vFnSysSetearColor(HWND_COMANDO, BLANCO);
-		vFnImprimir("\nMuestra el nro, posicion inicial y posicion final de los segmentos de memoria ocupados");
+		vFnImprimir("\nMuestra la posicion inicial y final de los segmentos de datos definidos para cada proceso");
 	}
 }
 /**
@@ -931,11 +937,10 @@ void vFnMenuVer()
 }
 
 
-//TODO lala - Actualizar segun las nuevas estrategias de asig. de memoria
 /**
 \fn void vFnMenuMem()
 \brief  Muestra por pantalla información relevante a la memoria del Sistema
-\date 01/05/2008
+\date 25/10/2008
 */
 void vFnMenuMem()
 {
@@ -950,6 +955,9 @@ void vFnMenuMem()
 	// vFnListarKMem();
 
 	if (uiModoMemoria == MODOPAGINADO) {
+        // PAGINACION
+        // TODO Actualizar a las nuevas estrategias de asig. de memoria
+
 		// Total de memoria usada y perdida.
 		while (iN < CANTMAXPROCS) {
 			if (pstuPCB[iN].iEstado != PROC_ELIMINADO
@@ -987,7 +995,7 @@ void vFnMenuMem()
 		//Y si dividiamos despues por 2^20 directamente multiplicamos por 32
 
 		vFnImprimir("\nSimulando modelo de Memoria Paginada\n");
-		vFnImprimir("------------------------------------\n" );
+        vFnImprimir("-------------------------------------------\n" );
 		vFnImprimir("  Memoria Total           = %.2f Mb (%db)\n",
 			(float)iTamanioMemoria / 32, iTamanioMemoria<<15 );
 		vFnImprimir("  Memoria utilizada       = %.2f Mb (%db)\n",
@@ -1002,56 +1010,55 @@ void vFnMenuMem()
 			    (float)uiMemoriaProceso / (1024*1024), uiMemoriaProceso );
 	} 
 	
-	else // SEGMENTACION
-	{
-		// Total de memoria usada y perdida.
-		while (iN < CANTMAXPROCS) {
-			if (pstuPCB[iN].iEstado != PROC_ELIMINADO)
-				uiMemoriaUsada += (pstuPCB[iN].uiTamProc);
-			iN++;
-		}
-		iN = 0;
-		/* TODO lala Arreglar
-        while (iN < 30) {
-			if (iMatrizMf[iN][0] != -1)	//Si el segmento está ocupado lo suma
-				uiMemoriaUsadaOverhead += (iMatrizMf[iN][1] - iMatrizMf[iN][0]);
-			else
-				uiMemoriaDisponible  += (iMatrizMf[iN][1] - iMatrizMf[iN-1][1] +1);
-			iN++;
-		}
-		iN = 0;
-        */
+    else {
+        // SEGMENTACION
+        
+        uiMemoriaUsada = 0;
+        uiMemoriaPerdida = 0;
+        // Total de memoria usada y perdida.
+        for(iN =0; iN < CANTMAXPROCS; iN++) {
+            if (pstuPCB[iN].iEstado != PROC_ELIMINADO &&
+                pstuPCB[iN].iEstado != PROC_NO_DEFINIDO) {
 
-		iTamanioMemoria     = uiMemoriaDisponible + uiMemoriaUsadaOverhead;
-		uiMemoriaPerdida    = uiMemoriaUsadaOverhead - uiMemoriaUsada;
-		uiMemoriaProceso    = 0; //TODO lala antes decia iFnSegmentoMaximo();
+                if(pstuPCB[iN].uiIndiceGDT_DS != 2) {
+                    //No contamos los procesos kernel
+                    uiMemoriaUsada += pstuPCB[iN].uiLimite;
+                    uiMemoriaPerdida += pstuPCB[iN].uiTamanioOverhead;
+                }
+            }
+        }
+        
+        //Asi se calcula en kernel/mem/memoria_k.h el total de memoria en el
+        //heap de memoria alta del kernel
+        iTamanioMemoria     = uiTamanioMemoriaBios - INICIO_MEMORIA_ALTA;
 
-		//Ya tenemos floats, dividimos para pasar a Kb o Mb
+        //Ya tenemos floats, dividimos para pasar a Kb o Mb
+        
+        vFnImprimir("\nUtilizando Memoria Segmentada - Celdas de tamanio variable con granularidad 4K\n");
+        vFnImprimir("-------------------------------------------------------------------------------\n" );
+        vFnImprimir("  Resumen Heap memoria alta;\n");
+        vFnImprimir("    Memoria Total                              = %.2f Mb "
+                "(%db)\n",(float)iTamanioMemoria/(1024*1024), iTamanioMemoria );
+        vFnImprimir("    Memoria utilizada                          = %.2f Mb "
+                "(%db)\n", (float)(iTamanioMemoria-uiMemoriaDisponibleProcesos)/
+                (1024*1024), iTamanioMemoria - uiMemoriaDisponibleProcesos);
+        vFnImprimir("    Memoria utilizada por procesos usuario     = %.2f Mb "
+                "(%db)\n",(float)uiMemoriaUsada / (1024*1024), uiMemoriaUsada );
+        vFnImprimir("    Memoria disponible                         = %.2f Mb "
+                "(%db)\n",(float)uiMemoriaDisponibleProcesos / (1024*1024),
+                uiMemoriaDisponibleProcesos );
+        vFnImprimir("    Memoria perdida por fragmentacion Interna  = %.2f Kb "
+                "(%db)\n", (float)uiMemoriaPerdida / 1024, uiMemoriaPerdida );
+    }
 
-		vFnImprimir("\nSimulando modelo de Memoria Segmentada - Celdas de tamanio Fijo\n");
-		vFnImprimir("---------------------------------------------------------------\n\n" );
-		vFnImprimir("  Memoria Total           = %.2f Mb (%db)\n",
-			(float)iTamanioMemoria / (1024*1024), iTamanioMemoria );
-		vFnImprimir("  Memoria utilizada       = %.2f Mb (%db)\n",
-			(float)uiMemoriaUsada / (1024*1024), uiMemoriaUsada );
-		vFnImprimir("  Memoria disponible      = %.2f Mb (%db)\n",
-			(float)uiMemoriaDisponible / (1024*1024),uiMemoriaDisponible );
-		vFnImprimir("  Memoria perdida por \n"
-			    "   fragmentacion Interna  = %.2f Kb (%db)\n",
-			(float)uiMemoriaPerdida / 1024, uiMemoriaPerdida );
-		vFnImprimir("  Capacidad maxima de un\n"
-			    "   proceso en memoria     = %.2f Kb (%db)\n",
-			(float)uiMemoriaProceso / 1024, uiMemoriaProceso );
-											}
-	
-	vFnImprimir("-------------------------------------------\n" );
+    vFnImprimir("-------------------------------------------------------------------------------\n" );
 
-	vFnImprimir(" Memoria Total (BIOS)    = %.2f Mb (%db)\n",
-	    (float)uiTamanioMemoriaBios / (1024*1024), uiTamanioMemoriaBios );
-	vFnImprimir(" Tamanio del kernel      = %.2f Kb (%db)\n",
-	    (float)uiTamanioKernel / 1024, uiTamanioKernel );
-	vFnImprimir(" Tamanio del bss         = %.2f Kb (%db)\n",
-	    (float)uiTamanioBSS /1024, uiTamanioBSS );
+    vFnImprimir(" Memoria Total (BIOS)    = %.2f Mb (%db)\n",
+            (float)uiTamanioMemoriaBios / (1024*1024), uiTamanioMemoriaBios );
+    vFnImprimir(" Tamanio del kernel      = %.2f Kb (%db)\n",
+            (float)uiTamanioKernel / 1024, uiTamanioKernel );
+    vFnImprimir(" Tamanio del bss         = %.2f Kb (%db)\n",
+            (float)uiTamanioBSS /1024, uiTamanioBSS );
 }
 
 
@@ -1698,15 +1705,50 @@ void vFnMenuBitmap()
 
 /**
 \fn void vFnMenuSegs()
-\brief  Muestra el nro, la posicion inicial y final en bytes de los
-segmentos ocupados
-\date 09/04/2006
+\brief Muestra la posicion inicial y final de los segmentos de datos definidos para cada proceso
+\date 25/10/2008
 */
 void vFnMenuSegs()
 {
-/* CHAU	vFnMostrarMemoriaSegmentada();*/
-    //TODO lala - Mostrar los segmentos ocupados, no solo los bloques libres
-    vFnListarBloquesLibres();
+    unsigned int i, uiNroSegmento;
+
+    /**
+    \note Ya que para SEGMENTACION no mantenemos ninguna estructura adicional
+    para estadisticas de uso de memoria por procesos, generamos este informe
+    consultando la tabla de PCBs.
+    No vale la pena incluir este codigo en kernel/mem/memoria_s
+    */
+
+    vFnImprimir ("\n#### SEGMENTOS DE DATOS PARA CADA PROCESO ####");
+
+    uiNroSegmento = 0;
+    for(i=0 ; i < CANTMAXPROCS ; i++) {
+        if( pstuPCB[i].iEstado != PROC_ELIMINADO &&
+            pstuPCB[i].iEstado != PROC_NO_DEFINIDO) {
+                uiNroSegmento++;
+
+                vFnImprimir("\n#%3d %s PID=%3d PosGDT=%2d   ",
+                        uiNroSegmento,
+                        pstuPCB[i].stNombre,
+                        pstuPCB[i].ulId,
+                        pstuPCB[i].uiIndiceGDT_DS
+                        );
+
+                if( pstuPCB[i].uiIndiceGDT_DS == 2) {
+                    vFnImprimir("(usa Segmento KERNEL 0 a 4Gb)");
+                } else {
+                    vFnImprimir("Inicio=0x%8x Fin=0x%8x Tam=%d",
+                            pstuPCB[i].uiDirBase,
+                            pstuPCB[i].uiDirBase + pstuPCB[i].uiLimite,
+                            pstuPCB[i].uiLimite
+                            );
+                }
+        }
+
+        if ((uiNroSegmento % 14 == 0) && (uiNroSegmento > 0)) cFnPausa ();
+    }
+
+    //vFnListarBloquesLibres();
 }
 
 
@@ -1978,8 +2020,7 @@ void vFnMenuExecSeg(int iComandoPos) {
             vFnImprimir("\n Parametro invalido: Por favor ingrese: "
                         "1 para lanzar un proceso de sistema o "
                         "2 para un proceso usuario");
-        } else if ((iArg2 <= 0)/* || (iArg2 > iFnSegmentoMaximo())*/) {
-            //TODO lala Cambiar limites ( Desde 1byte, Hasta MemDisponible )
+        } else if (iArg2 <= 0) {
             //Tamanio invalido
             vFnImprimir("\n Tamanio de proceso invalido. "
                         "Ingrese un valor superior.");

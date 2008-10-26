@@ -545,6 +545,8 @@ int iFnNuevaTareaEspecial( void *pEIP, char *stNombre )
              0                  /* Tamanio del Stack*/
              );
 
+    //TODO: Revisar
+    pstuPCB[iPosicion].uiTamanioOverhead = 0;
 
     //ESCRIBIMOS EN EL STACK SPACE (RING 0) DEL PROCESO CREADO EL CONTENIDO DE
     //LA VARIABLE PID QUE DICHO PROCESO TOMA COMO PARAMETRO
@@ -586,13 +588,7 @@ int iFnInstanciarIdle()
 \param stArchivo Nombre del archivo binario con el cual crear el proceso
 \returns Si hubo exito, la posicion dentro de la Tabla de PCBs, si no, un numero menor a 0
 */
-int iFnCrearProceso(
-        /*
-        void* pvInicioBinario,
-        unsigned long ulTamanioBinario,
-        char* stNombreProceso
-        */
-        char* stArchivo)
+int iFnCrearProceso( char* stArchivo)
 {
     unsigned short int bInterrupcionesHabilitadas = 0;
     unsigned int uiIndiceGDT_CS, uiIndiceGDT_DS, uiIndiceGDT_TSS;
@@ -624,7 +620,7 @@ int iFnCrearProceso(
     //datos leidos del binario a granularidad 4K
     uiTamSegCodigo     = REDONDEAR_HACIA_ARRIBA_A_4K(stuInfoExe.uiTamanioTexto);
     uiTamStack         = REDONDEAR_HACIA_ARRIBA_A_4K(stuInfoExe.uiTamanioStack);
-    uiTamInicializados = REDONDEAR_HACIA_ARRIBA_A_4K(stuInfoExe.uiTamanioDatosInicializados);
+    uiTamInicializados = stuInfoExe.uiTamanioDatosInicializados;
     uiTamSegDatos      = REDONDEAR_HACIA_ARRIBA_A_4K(uiTamSegCodigo + uiTamStack + uiTamInicializados); //Se crea sin Heap
 
     //Se reserva la memoria para el proceso (se usa un unico segmento para
@@ -713,6 +709,14 @@ int iFnCrearProceso(
              uiTamInicializados,/* Tamanio del bloque de datos inicializados */
              uiTamStack         /* Tamanio del Stack */
              );
+
+    //TODO: Revisar
+    /* La memoria 'extra' asignada al segmento de datos se puede reutilizar
+     * cuando crece el stack, en cambio lo que se asigna de mas al segmento de
+     * codigo no se reutiliza.
+     */
+    pstuPCB[iPosicion].uiTamanioOverhead =
+                                    uiTamSegCodigo - stuInfoExe.uiTamanioTexto;
 
     if (bInterrupcionesHabilitadas)
       __asm__ ("sti"::);

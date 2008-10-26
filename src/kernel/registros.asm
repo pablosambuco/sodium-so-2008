@@ -119,6 +119,7 @@ wFnGetESP:
 ;*        jmp	near .near		; just for fun
 ;*.near
 ;*ret
+;*/
 
 
 ALIGN 4
