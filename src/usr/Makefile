@@ -59,10 +59,14 @@ libsodium.tmp: libsodium.c
 p1.bin: p1.o libsodium.o
 	ld --cref -o p1.ld -Ttext 0x0 -N -e main $^
 	objcopy -R .comment -R .note -S -O binary p1.ld p1.bin
+	#Y se incluye la BSS
+	size p1.ld | awk '{ if (NR==2) { for(i=0; i<$$1; ++i) printf("\0") } }' >> $@
 
 init.bin: init.o libsodium.o
 	ld --cref -o init.ld -Ttext 0x0 -N -e main $^
 	objcopy -R .comment -R .note -S -O binary init.ld init.bin
+	#Y se incluye la BSS
+	size init.ld | awk '{ if (NR==2) { for(i=0; i<$$1; ++i) printf("\0") } }' >> $@
 
 init_wrapper.c: init.bin
 	cat /dev/null > $@
@@ -75,6 +79,8 @@ init_wrapper.c: init.bin
 prog.bin: prog.o libsodium.o
 	ld --cref -o prog.ld -Ttext 0x0 -N -e main $^
 	objcopy -R .comment -R .note -S -O binary prog.ld $@
+	#Y se incluye la BSS
+	size prog.ld | awk '{ if (NR==2) { for(i=0; i<$$1; ++i) printf("\0") } }' >> $@
 
 prog_wrapper.c: prog.bin
 	cat /dev/null > $@
@@ -87,6 +93,8 @@ prog_wrapper.c: prog.bin
 idle.bin: idle.o libsodium.o
 	ld --cref -o idle.ld -Ttext 0x0 -N -e main $^
 	objcopy -R .comment -R .note -S -O binary idle.ld idle.bin
+	#Y se incluye la BSS
+	size idle.ld | awk '{ if (NR==2) { for(i=0; i<$$1; ++i) printf("\0") } }' >> $@
 
 idle_wrapper.c: idle.bin
 	cat /dev/null > $@
@@ -99,6 +107,9 @@ idle_wrapper.c: idle.bin
 tst_%.bin: tst_%.o libsodium.o
 	ld --cref -o tst_$*.ld -Ttext 0x0 -N -e main $^
 	objcopy -R .comment -R .note -S -O binary tst_$*.ld $@
+	#Y se incluye la BSS
+	size tst_$*.ld | awk '{ if (NR==2) { for(i=0; i<$$1; ++i) printf("\0") } }' >> $@
+
 
 %.o: %.c
 #	$(MAKEDEPEND) -a -- $(CFLAGS) $^
@@ -227,3 +238,304 @@ p1.o: ../include/kernel/definiciones.h ../include/usr/memoria_dinamica.h
 ../include/kernel/syscall.o: ../include/kernel/tiempo.h
 ../include/kernel/syscall.o: ../include/kernel/definiciones.h
 ../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+
+reloj.o: ../include/usr/reloj.h ../include/kernel/puertos.h
+reloj.o: ../include/kernel/definiciones.h ../include/usr/tipos.h
+reloj.o: ../include/video.h ../include/kernel/libk/string.h
+reloj.o: ../include/kernel/tiempo.h
+../include/kernel/puertos.o: ../include/kernel/definiciones.h
+../include/kernel/puertos.o: ../include/usr/tipos.h
+../include/kernel/definiciones.o: ../include/usr/tipos.h
+../include/video.o: ../include/kernel/definiciones.h ../include/usr/tipos.h
+../include/video.o: ../include/kernel/libk/string.h
+../include/kernel/libk/string.o: ../include/kernel/definiciones.h
+../include/kernel/libk/string.o: ../include/usr/tipos.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/usr/tipos.h
+
+idle.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+idle.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+idle.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+idle.o: ../include/kernel/definiciones.h ../include/usr/tipos.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/tipos.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/syscall.o: ../include/usr/tipos.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/usr/tipos.h
+../include/kernel/definiciones.o: ../include/usr/tipos.h
+
+sodstdio.o: ../include/usr/sodstdio.h ../include/usr/tipos.h
+sodstdio.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+sodstdio.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+sodstdio.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+sodstdio.o: ../include/kernel/definiciones.h ../include/usr/sodstdlib.h
+../include/usr/sodstdio.o: ../include/usr/tipos.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/tipos.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/syscall.o: ../include/usr/tipos.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/usr/tipos.h
+../include/kernel/definiciones.o: ../include/usr/tipos.h
+
+sodstd.o: ../include/usr/sodstd.h ../include/usr/libsodium.h
+sodstd.o: ../include/kernel/syscall.h ../include/kernel/signal.h
+sodstd.o: ../include/kernel/semaforo.h ../include/kernel/shm.h
+sodstd.o: ../include/kernel/tiempo.h ../include/kernel/definiciones.h
+sodstd.o: ../include/usr/tipos.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/tipos.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/syscall.o: ../include/usr/tipos.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/usr/tipos.h
+../include/kernel/definiciones.o: ../include/usr/tipos.h
+
+sodstdlib.o: ../include/usr/sodstdlib.h
+
+sodstring.o: ../include/usr/sodstring.h
+
+memoria_dinamica.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+memoria_dinamica.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+memoria_dinamica.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+memoria_dinamica.o: ../include/kernel/definiciones.h ../include/usr/tipos.h
+memoria_dinamica.o: ../include/usr/memoria_dinamica.h ../include/usr/sodstd.h
+memoria_dinamica.o: ../include/usr/sodstring.h ../include/usr/sodstdio.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/tipos.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/syscall.o: ../include/usr/tipos.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/usr/tipos.h
+../include/kernel/definiciones.o: ../include/usr/tipos.h
+../include/usr/sodstdio.o: ../include/usr/tipos.h
+
+init.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+init.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+init.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+init.o: ../include/kernel/definiciones.h ../include/usr/tipos.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/tipos.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/syscall.o: ../include/usr/tipos.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/usr/tipos.h
+../include/kernel/definiciones.o: ../include/usr/tipos.h
+
+tst_ptrc.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+tst_ptrc.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+tst_ptrc.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+tst_ptrc.o: ../include/kernel/definiciones.h ../include/usr/tipos.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/tipos.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/syscall.o: ../include/usr/tipos.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/usr/tipos.h
+../include/kernel/definiciones.o: ../include/usr/tipos.h
+
+tst_sgnl.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+tst_sgnl.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+tst_sgnl.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+tst_sgnl.o: ../include/kernel/definiciones.h ../include/usr/tipos.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/tipos.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/syscall.o: ../include/usr/tipos.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/usr/tipos.h
+../include/kernel/definiciones.o: ../include/usr/tipos.h
+
+tst_ipc.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+tst_ipc.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+tst_ipc.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+tst_ipc.o: ../include/kernel/definiciones.h ../include/usr/tipos.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/tipos.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/syscall.o: ../include/usr/tipos.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/usr/tipos.h
+../include/kernel/definiciones.o: ../include/usr/tipos.h
+
+tst_time.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+tst_time.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+tst_time.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+tst_time.o: ../include/kernel/definiciones.h ../include/usr/tipos.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/tipos.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/syscall.o: ../include/usr/tipos.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/usr/tipos.h
+../include/kernel/definiciones.o: ../include/usr/tipos.h
+
+tst_flt.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+tst_flt.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+tst_flt.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+tst_flt.o: ../include/kernel/definiciones.h ../include/usr/tipos.h
+tst_flt.o: ../include/usr/sodstdio.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/tipos.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/syscall.o: ../include/usr/tipos.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/usr/tipos.h
+../include/kernel/definiciones.o: ../include/usr/tipos.h
+../include/usr/sodstdio.o: ../include/usr/tipos.h
+
+tst_memd.o: ../include/usr/sodstdio.h ../include/usr/tipos.h
+tst_memd.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+tst_memd.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+tst_memd.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+tst_memd.o: ../include/kernel/definiciones.h
+../include/usr/sodstdio.o: ../include/usr/tipos.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/tipos.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/syscall.o: ../include/usr/tipos.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/usr/tipos.h
+../include/kernel/definiciones.o: ../include/usr/tipos.h
+
+prog.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+prog.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+prog.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+prog.o: ../include/kernel/definiciones.h ../include/usr/tipos.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/tipos.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/syscall.o: ../include/usr/tipos.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/usr/tipos.h
+../include/kernel/definiciones.o: ../include/usr/tipos.h
+
+p1.o: ../include/usr/libsodium.h ../include/kernel/syscall.h
+p1.o: ../include/kernel/signal.h ../include/kernel/semaforo.h
+p1.o: ../include/kernel/shm.h ../include/kernel/tiempo.h
+p1.o: ../include/kernel/definiciones.h ../include/usr/tipos.h
+../include/usr/libsodium.o: ../include/kernel/syscall.h
+../include/usr/libsodium.o: ../include/kernel/signal.h
+../include/usr/libsodium.o: ../include/kernel/semaforo.h
+../include/usr/libsodium.o: ../include/kernel/shm.h
+../include/usr/libsodium.o: ../include/kernel/tiempo.h
+../include/usr/libsodium.o: ../include/kernel/definiciones.h
+../include/usr/libsodium.o: ../include/usr/tipos.h
+../include/kernel/syscall.o: ../include/kernel/signal.h
+../include/kernel/syscall.o: ../include/kernel/semaforo.h
+../include/kernel/syscall.o: ../include/kernel/shm.h
+../include/kernel/syscall.o: ../include/kernel/tiempo.h
+../include/kernel/syscall.o: ../include/kernel/definiciones.h
+../include/kernel/syscall.o: ../include/usr/tipos.h
+../include/kernel/tiempo.o: ../include/kernel/definiciones.h
+../include/kernel/tiempo.o: ../include/usr/tipos.h
+../include/kernel/definiciones.o: ../include/usr/tipos.h

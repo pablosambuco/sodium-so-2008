@@ -6,8 +6,6 @@
 #define __LIB_SODIUM_H
 
 #include <kernel/syscall.h>
-#include <usr/memoria_dinamica.h>
-
 #include <usr/tipos.h>  //Tipos de variables 
 
 #define RR 1

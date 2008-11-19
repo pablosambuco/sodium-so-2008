@@ -1,5 +1,8 @@
 #include <usr/libsodium.h>
 
+#include <usr/memoria_dinamica.h>
+
+
 /* definicion de la variable global 'errno' */
 int errno = 0;
 
